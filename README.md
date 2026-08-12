@@ -1,3 +1,9 @@
+# kyg-home
+
+개인 홈페이지 (인증 + 게시판 + 첨부파일). 프로젝트 문서는 [docs/](./docs/README.md)를 참고하세요.
+
+---
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.

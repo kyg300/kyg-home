@@ -1,0 +1,92 @@
+# 아키텍처
+
+## 기술 스택
+
+| 영역 | 사용 기술 |
+|---|---|
+| 프론트엔드 | React 19 + Vite + react-router-dom |
+| 백엔드 | Vercel Serverless Functions (TypeScript, `api/` 폴더 기반 파일 라우팅) |
+| DB | Neon Postgres (`@neondatabase/serverless`의 HTTP 드라이버) |
+| 인증 | JWT를 HttpOnly 쿠키(`kyg_home_token`)에 저장, `bcryptjs`로 비밀번호 해시 |
+| 파일 저장소 | Vercel Blob (private 스토어) |
+| 타입체크 | TypeScript (`tsc -b` 프론트, `tsc -p tsconfig.api.json` API) |
+
+## 폴더 구조
+
+```
+api/                     Vercel Serverless Functions (파일 경로 = URL 경로)
+  _lib/
+    auth.ts              JWT 발급/검증, 쿠키 생성, requireAuth()
+    db.ts                Neon sql 클라이언트
+    attachments.ts       첨부파일 허용 타입/용량/개수 상수 + 검증 함수
+  auth/
+    signup.ts login.ts logout.ts me.ts
+  posts/
+    index.ts             GET(목록)/POST(작성)
+    [id].ts               GET(상세)/PUT(수정)/DELETE(삭제)
+  blob/
+    upload.ts             클라이언트 업로드용 토큰 발급 (@vercel/blob handleUpload)
+  attachments/
+    [id].ts               로그인한 사용자에게만 첨부파일을 스트리밍하는 프록시
+
+src/
+  pages/                  Home, Login, Signup, BoardList, PostDetail, PostEditor, NotFound
+  components/             Navbar, ProtectedRoute
+  context/AuthContext.tsx 로그인 상태 전역 관리
+  lib/
+    api.ts                백엔드 API 호출 래퍼 + 첨부파일 업로드
+    attachments.ts        첨부파일 허용 타입/용량/개수 상수 (프론트 쪽, api/_lib와 별도 사본)
+  styles/index.css        전역 스타일 (디자인 토큰은 :root 변수)
+
+scripts/
+  dev-api-server.mjs      vite dev와 별개로 api/*.ts를 로컬 Node http 서버로 실행
+  ts-extension-loader.mjs 로컬 실행 시 .js import를 실제 .ts 파일로 매핑하는 Node 모듈 훅
+  _apply-schema.mjs       schema.sql을 DATABASE_URL에 적용 (idempotent)
+  _db-check.mjs           최근 게시글 1건 확인용 점검 스크립트
+
+schema.sql                DB 스키마 원본
+vercel.json               SPA 라우팅용 rewrite 설정
+```
+
+## DB 스키마
+
+```sql
+users (id, email, username, password_hash, created_at)
+posts (id, user_id → users, title, content, created_at, updated_at)
+attachments (id, post_id → posts, filename, url, content_type, size, created_at)
+```
+
+- `posts.user_id`, `attachments.post_id` 모두 `on delete cascade` — 사용자/게시글 삭제 시 하위 데이터 자동 정리 (단, Blob 파일 자체는 별도로 지워야 함, 아래 참고)
+- 스키마 변경은 `schema.sql`을 고치고 `node --env-file=.env scripts/_apply-schema.mjs`로 반영 (전부 `if not exists`라 재실행해도 안전)
+
+## 인증 흐름
+
+1. `POST /api/auth/signup` 또는 `/login` → 비밀번호 검증 후 JWT 발급 → `Set-Cookie: kyg_home_token=...`(HttpOnly, SameSite=Lax)
+2. 이후 모든 요청은 브라우저가 쿠키를 자동으로 실어 보냄 (`fetch`에는 `credentials: 'include'` 필요, `src/lib/api.ts`에 이미 적용됨)
+3. API 핸들러는 `requireAuth(req)`로 쿠키의 JWT를 검증하고 `{ userId, username }`을 얻음
+4. `GET /api/posts`, `GET /api/posts/:id`도 `requireAuth` 필수 — **비로그인 상태에서는 게시글을 아예 읽을 수 없음**
+5. 프론트에서도 `/board`, `/board/:id`, `/board/new`, `/board/:id/edit`를 `ProtectedRoute`로 감싸 비로그인 시 `/login`으로 리다이렉트 (서버 쪽 401이 최종 방어선, 프론트 라우트 가드는 UX용)
+
+## 게시판 CRUD
+
+- 목록/상세 조회는 로그인만 하면 누구나 가능
+- 수정/삭제는 `posts.user_id === 로그인한 유저`일 때만 허용 (403으로 차단)
+- 홈 화면 검색바 → `/board?q=검색어` → `BoardList`가 이미 받아온 목록을 클라이언트에서 제목/내용 기준으로 필터링 (서버 쪽 검색 API는 없음)
+
+## 첨부파일 흐름
+
+Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중인 Blob 스토어가 **private**로 설정되어 있어 URL만으로는 접근이 안 되기 때문에 아래처럼 3단계로 구성했습니다.
+
+**업로드 (글쓰기/수정 시)**
+1. 브라우저가 `api.uploadAttachment(file)` 호출 → `@vercel/blob/client`의 `upload()`가 먼저 `POST /api/blob/upload`를 호출해 짧은 시간만 유효한 업로드 토큰을 발급받음 (`api/blob/upload.ts`가 `handleUpload()`로 처리, 로그인 필요, 허용 타입/용량은 `api/_lib/attachments.ts`의 상수로 제한)
+2. 발급받은 토큰으로 브라우저가 **파일을 서버를 거치지 않고 Blob 스토리지에 직접 업로드** (그래서 서버리스 함수의 요청 크기 제한에 안 걸림)
+3. 업로드 결과(`url`, `filename`, `contentType`, `size`)를 글쓰기 폼이 들고 있다가, `POST /api/posts` 또는 `PUT /api/posts/:id` 호출 시 함께 보내서 `attachments` 테이블에 저장
+
+**조회/다운로드**
+- API 응답(`GET /api/posts/:id` 등)에는 첨부파일의 실제 Blob URL을 **절대 내려주지 않음** — `id`만 내려주고, 프론트는 `/api/attachments/:id`로 접근
+- `api/attachments/[id].ts`가 로그인 여부를 확인한 뒤, 서버가 가진 `BLOB_READ_WRITE_TOKEN`으로 Blob 스토리지에서 파일을 대신 받아와 그대로 스트리밍
+- 이미지는 `Content-Disposition: inline`(새 탭 미리보기), 그 외 파일은 `?download=1` 쿼리를 붙여 `Content-Disposition: attachment`(강제 다운로드)로 응답
+
+**삭제**
+- 글 수정 시 기존 첨부파일 목록과 새로 제출된 목록을 비교해서, 빠진 것은 DB row 삭제 + `del()`로 Blob 파일도 삭제
+- 글 삭제 시에도 연결된 첨부파일의 Blob 파일을 먼저 지운 뒤 게시글을 삭제 (DB row는 `on delete cascade`로 자동 정리되지만 Blob 파일은 별도 API 호출로 지워야 함)
