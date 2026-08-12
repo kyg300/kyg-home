@@ -1,4 +1,7 @@
 import { createServer } from 'node:http'
+import { register } from 'node:module'
+
+register('./ts-extension-loader.mjs', import.meta.url)
 
 const PORT = process.env.API_DEV_PORT ?? 3001
 

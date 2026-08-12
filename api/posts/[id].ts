@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { requireAuth } from '../_lib/auth.ts'
-import { sql } from '../_lib/db.ts'
+import { requireAuth } from '../_lib/auth'
+import { sql } from '../_lib/db'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { id } = req.query
