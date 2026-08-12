@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { del } from '@vercel/blob'
 import { requireAuth } from '../_lib/auth.js'
+import { isValidAttachmentInput, MAX_ATTACHMENTS_PER_POST } from '../_lib/attachments.js'
 import { sql } from '../_lib/db.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -21,7 +23,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     `
     const post = rows[0]
     if (!post) return res.status(404).json({ error: '게시글을 찾을 수 없습니다' })
-    return res.status(200).json({ post })
+
+    const attachments = await sql`
+      select id, filename, url, content_type, size, created_at
+      from attachments
+      where post_id = ${id}
+      order by created_at asc
+    `
+    return res.status(200).json({ post: { ...post, attachments } })
   }
 
   if (req.method === 'PUT') {
@@ -35,9 +44,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: '본인 글만 수정할 수 있습니다' })
     }
 
-    const { title, content } = req.body ?? {}
+    const { title, content, attachments } = req.body ?? {}
     if (typeof title !== 'string' || typeof content !== 'string' || !title.trim() || !content.trim()) {
       return res.status(400).json({ error: 'title, content가 필요합니다' })
+    }
+
+    const attachmentList = Array.isArray(attachments) ? attachments : []
+    if (attachmentList.length > MAX_ATTACHMENTS_PER_POST) {
+      return res.status(400).json({ error: `첨부파일은 최대 ${MAX_ATTACHMENTS_PER_POST}개까지 가능합니다` })
+    }
+    const keptIds = new Set<string>()
+    const newAttachments: unknown[] = []
+    for (const a of attachmentList) {
+      if (a && typeof a === 'object' && typeof (a as { id?: unknown }).id === 'string') {
+        keptIds.add((a as { id: string }).id)
+      } else if (isValidAttachmentInput(a)) {
+        newAttachments.push(a)
+      } else {
+        return res.status(400).json({ error: '첨부파일 정보가 올바르지 않습니다' })
+      }
+    }
+
+    const existingAttachments = await sql`
+      select id, url from attachments where post_id = ${id}
+    `
+    const toRemove = existingAttachments.filter((a) => !keptIds.has(a.id))
+    for (const a of toRemove) {
+      await sql`delete from attachments where id = ${a.id}`
+      await del(a.url).catch(() => {})
+    }
+    for (const a of newAttachments as { url: string; filename: string; contentType: string; size: number }[]) {
+      await sql`
+        insert into attachments (post_id, filename, url, content_type, size)
+        values (${id}, ${a.filename}, ${a.url}, ${a.contentType}, ${a.size})
+      `
     }
 
     const rows = await sql`
@@ -45,7 +85,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       where id = ${id}
       returning id, title, content, created_at, updated_at, user_id
     `
-    return res.status(200).json({ post: { ...rows[0], author_username: payload.username } })
+    const finalAttachments = await sql`
+      select id, filename, url, content_type, size, created_at
+      from attachments
+      where post_id = ${id}
+      order by created_at asc
+    `
+    return res
+      .status(200)
+      .json({ post: { ...rows[0], author_username: payload.username, attachments: finalAttachments } })
   }
 
   if (req.method === 'DELETE') {
@@ -58,6 +106,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (existing.user_id !== payload.userId) {
       return res.status(403).json({ error: '본인 글만 삭제할 수 있습니다' })
     }
+
+    const attachmentRows = await sql`select url from attachments where post_id = ${id}`
+    await Promise.all(attachmentRows.map((a) => del(a.url).catch(() => {})))
 
     await sql`delete from posts where id = ${id}`
     return res.status(200).json({ ok: true })

@@ -18,3 +18,15 @@ create table if not exists posts (
 );
 
 create index if not exists posts_created_at_idx on posts (created_at desc);
+
+create table if not exists attachments (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references posts(id) on delete cascade,
+  filename text not null,
+  url text not null,
+  content_type text not null,
+  size bigint not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists attachments_post_id_idx on attachments (post_id);

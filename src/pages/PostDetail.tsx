@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api, type Post } from '../lib/api'
+import { formatFileSize, isImageContentType } from '../lib/attachments'
 
 export default function PostDetail() {
   const { id } = useParams<{ id: string }>()
@@ -35,6 +36,8 @@ export default function PostDetail() {
   if (!post) return <p className="status-text">글을 찾을 수 없습니다.</p>
 
   const isAuthor = user?.id === post.user_id
+  const images = (post.attachments ?? []).filter((a) => isImageContentType(a.content_type))
+  const files = (post.attachments ?? []).filter((a) => !isImageContentType(a.content_type))
 
   return (
     <section className="page">
@@ -43,6 +46,27 @@ export default function PostDetail() {
         {post.author_username} · {new Date(post.created_at).toLocaleString()}
       </div>
       <p className="post-content">{post.content}</p>
+      {images.length > 0 && (
+        <div className="attachment-image-grid">
+          {images.map((a) => (
+            <a key={a.id} href={a.url} target="_blank" rel="noreferrer" className="attachment-image-link">
+              <img src={a.url} alt={a.filename} className="attachment-image" />
+            </a>
+          ))}
+        </div>
+      )}
+      {files.length > 0 && (
+        <ul className="attachment-file-list">
+          {files.map((a) => (
+            <li key={a.id} className="attachment-file-item">
+              <a href={a.url} target="_blank" rel="noreferrer" className="attachment-file-link">
+                📎 {a.filename}
+              </a>
+              <span className="attachment-edit-size">{formatFileSize(a.size)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {isAuthor && (
         <div className="post-actions">
           <Link to={`/board/${post.id}/edit`} className="btn btn-secondary">
