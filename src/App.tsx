@@ -18,7 +18,14 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/board" element={<BoardList />} />
+          <Route
+            path="/board"
+            element={
+              <ProtectedRoute>
+                <BoardList />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/board/new"
             element={
@@ -27,7 +34,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/board/:id" element={<PostDetail />} />
+          <Route
+            path="/board/:id"
+            element={
+              <ProtectedRoute>
+                <PostDetail />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/board/:id/edit"
             element={

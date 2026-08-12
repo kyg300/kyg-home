@@ -9,6 +9,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'GET') {
+    const payload = requireAuth(req)
+    if (!payload) return res.status(401).json({ error: '로그인이 필요합니다' })
+
     const rows = await sql`
       select posts.id, posts.title, posts.content, posts.created_at, posts.updated_at,
              posts.user_id, users.username as author_username

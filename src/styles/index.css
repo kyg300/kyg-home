@@ -399,12 +399,20 @@ a:hover {
 }
 
 .empty-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
   text-align: center;
   padding: var(--spacing-5) var(--spacing-3);
   color: var(--color-text-muted);
   background: var(--color-surface);
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-lg);
+}
+
+.empty-panel p {
+  margin: 0;
 }
 
 .search-result-banner {

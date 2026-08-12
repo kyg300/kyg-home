@@ -9,19 +9,25 @@ function snippet(content: string, length = 70) {
 }
 
 export default function Home() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!user) {
+      setPosts([])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
     api
       .listPosts()
       .then(({ posts }) => setPosts(posts.slice(0, 6)))
       .catch(() => setPosts([]))
       .finally(() => setLoading(false))
-  }, [])
+  }, [user])
 
   function handleSearch(e: FormEvent) {
     e.preventDefault()
@@ -82,11 +88,20 @@ export default function Home() {
               전체보기 →
             </Link>
           </div>
-          {loading && <p className="status-text">불러오는 중...</p>}
-          {!loading && posts.length === 0 && (
+          {authLoading && <p className="status-text">불러오는 중...</p>}
+          {!authLoading && !user && (
+            <div className="empty-panel">
+              <p>로그인하면 게시글을 볼 수 있어요.</p>
+              <Link to="/login" className="btn btn-primary">
+                로그인하러 가기
+              </Link>
+            </div>
+          )}
+          {!authLoading && user && loading && <p className="status-text">불러오는 중...</p>}
+          {!authLoading && user && !loading && posts.length === 0 && (
             <div className="empty-panel">아직 게시글이 없습니다. 첫 글을 남겨보세요.</div>
           )}
-          {!loading && posts.length > 0 && (
+          {!authLoading && user && !loading && posts.length > 0 && (
             <div className="post-grid">
               {posts.map((post) => (
                 <Link key={post.id} to={`/board/${post.id}`} className="post-card">
