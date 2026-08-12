@@ -24,7 +24,6 @@ export interface User {
 export interface Attachment {
   id: string
   filename: string
-  url: string
   content_type: string
   size: number
   created_at: string
@@ -82,7 +81,7 @@ export const api = {
   deletePost: (id: string) => request<{ ok: true }>(`/posts/${id}`, { method: 'DELETE' }),
   uploadAttachment: async (file: File): Promise<NewAttachment> => {
     const blob = await upload(file.name, file, {
-      access: 'public',
+      access: 'private',
       handleUploadUrl: '/api/blob/upload',
     })
     return { url: blob.url, filename: file.name, contentType: file.type, size: file.size }

@@ -49,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const attachmentRows = await sql`
         insert into attachments (post_id, filename, url, content_type, size)
         values (${post.id}, ${a.filename}, ${a.url}, ${a.contentType}, ${a.size})
-        returning id, filename, url, content_type, size, created_at
+        returning id, filename, content_type, size, created_at
       `
       insertedAttachments.push(attachmentRows[0])
     }

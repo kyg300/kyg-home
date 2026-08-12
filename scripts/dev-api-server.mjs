@@ -13,6 +13,7 @@ const routes = [
   { method: null, pattern: /^\/api\/posts$/, params: [], file: '../api/posts/index.ts' },
   { method: null, pattern: /^\/api\/posts\/([^/]+)$/, params: ['id'], file: '../api/posts/[id].ts' },
   { method: null, pattern: /^\/api\/blob\/upload$/, params: [], file: '../api/blob/upload.ts' },
+  { method: null, pattern: /^\/api\/attachments\/([^/]+)$/, params: ['id'], file: '../api/attachments/[id].ts' },
 ]
 
 const handlerCache = new Map()
@@ -82,6 +83,10 @@ const server = createServer(async (req, res) => {
       res.statusCode = this._status
       res.setHeader('Content-Type', 'application/json')
       res.end(JSON.stringify(data))
+    },
+    send(body) {
+      res.statusCode = this._status
+      res.end(body)
     },
   }
 

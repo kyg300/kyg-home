@@ -49,8 +49,14 @@ export default function PostDetail() {
       {images.length > 0 && (
         <div className="attachment-image-grid">
           {images.map((a) => (
-            <a key={a.id} href={a.url} target="_blank" rel="noreferrer" className="attachment-image-link">
-              <img src={a.url} alt={a.filename} className="attachment-image" />
+            <a
+              key={a.id}
+              href={`/api/attachments/${a.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="attachment-image-link"
+            >
+              <img src={`/api/attachments/${a.id}`} alt={a.filename} className="attachment-image" />
             </a>
           ))}
         </div>
@@ -59,7 +65,7 @@ export default function PostDetail() {
         <ul className="attachment-file-list">
           {files.map((a) => (
             <li key={a.id} className="attachment-file-item">
-              <a href={a.url} target="_blank" rel="noreferrer" className="attachment-file-link">
+              <a href={`/api/attachments/${a.id}`} target="_blank" rel="noreferrer" className="attachment-file-link">
                 📎 {a.filename}
               </a>
               <span className="attachment-edit-size">{formatFileSize(a.size)}</span>

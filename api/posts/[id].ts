@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!post) return res.status(404).json({ error: '게시글을 찾을 수 없습니다' })
 
     const attachments = await sql`
-      select id, filename, url, content_type, size, created_at
+      select id, filename, content_type, size, created_at
       from attachments
       where post_id = ${id}
       order by created_at asc
@@ -86,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       returning id, title, content, created_at, updated_at, user_id
     `
     const finalAttachments = await sql`
-      select id, filename, url, content_type, size, created_at
+      select id, filename, content_type, size, created_at
       from attachments
       where post_id = ${id}
       order by created_at asc
