@@ -2,9 +2,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireAuth } from '../_lib/auth.js'
 import { sql } from '../_lib/db.js'
 
-function contentDisposition(filename: string) {
+function contentDisposition(filename: string, forceDownload: boolean) {
   const encoded = encodeURIComponent(filename)
-  return `inline; filename="attachment"; filename*=UTF-8''${encoded}`
+  const disposition = forceDownload ? 'attachment' : 'inline'
+  return `${disposition}; filename="attachment"; filename*=UTF-8''${encoded}`
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -16,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const payload = requireAuth(req)
   if (!payload) return res.status(401).json({ error: '로그인이 필요합니다' })
 
-  const { id } = req.query
+  const { id, download } = req.query
   if (typeof id !== 'string') {
     return res.status(400).json({ error: '잘못된 첨부파일 id입니다' })
   }
@@ -33,6 +34,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const buffer = Buffer.from(await blobRes.arrayBuffer())
   res.setHeader('Content-Type', attachment.content_type)
-  res.setHeader('Content-Disposition', contentDisposition(attachment.filename))
+  res.setHeader('Content-Disposition', contentDisposition(attachment.filename, download === '1'))
   return res.status(200).send(buffer)
 }

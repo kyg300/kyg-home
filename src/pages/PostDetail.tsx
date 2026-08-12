@@ -65,7 +65,7 @@ export default function PostDetail() {
         <ul className="attachment-file-list">
           {files.map((a) => (
             <li key={a.id} className="attachment-file-item">
-              <a href={`/api/attachments/${a.id}`} target="_blank" rel="noreferrer" className="attachment-file-link">
+              <a href={`/api/attachments/${a.id}?download=1`} download={a.filename} className="attachment-file-link">
                 📎 {a.filename}
               </a>
               <span className="attachment-edit-size">{formatFileSize(a.size)}</span>
