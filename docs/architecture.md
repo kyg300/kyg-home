@@ -28,15 +28,21 @@ api/                     Vercel Serverless Functions (파일 경로 = URL 경로
     upload.ts             클라이언트 업로드용 토큰 발급 (@vercel/blob handleUpload)
   attachments/
     [id].ts               로그인한 사용자에게만 첨부파일을 스트리밍하는 프록시
+  stocks/
+    index.ts              네이버 시세 폴링 API를 서버에서 대신 호출해 정리된 형태로 반환 (인증 불필요)
+  translate/
+    index.ts              MyMemory 번역 API 프록시 (인증 불필요, 키/가입 불필요)
 
 src/
-  pages/                  Home, Login, Signup, BoardList, PostDetail, PostEditor, NotFound
+  pages/                  Home, Login, Signup, BoardList, PostDetail, PostEditor, NotFound,
+                          MapPage(/map), StockPage(/stock), TranslatePage(/translate)
   components/             Navbar, ProtectedRoute
   context/AuthContext.tsx 로그인 상태 전역 관리
   lib/
     api.ts                백엔드 API 호출 래퍼 + 첨부파일 업로드
     attachments.ts        첨부파일 허용 타입/용량/개수 상수 (프론트 쪽, api/_lib와 별도 사본)
   styles/index.css        전역 스타일 (디자인 토큰은 :root 변수)
+  vite-env.d.ts           `import.meta.env`에 커스텀 환경변수(`VITE_KAKAO_MAP_KEY`) 타입 추가
 
 scripts/
   dev-api-server.mjs      vite dev와 별개로 api/*.ts를 로컬 Node http 서버로 실행
@@ -90,3 +96,24 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 **삭제**
 - 글 수정 시 기존 첨부파일 목록과 새로 제출된 목록을 비교해서, 빠진 것은 DB row 삭제 + `del()`로 Blob 파일도 삭제
 - 글 삭제 시에도 연결된 첨부파일의 Blob 파일을 먼저 지운 뒤 게시글을 삭제 (DB row는 `on delete cascade`로 자동 정리되지만 Blob 파일은 별도 API 호출로 지워야 함)
+
+## 지도 / 시세 / 번역 (독립 유틸리티 페이지)
+
+게시판과 무관하게 로그인 없이 누구나 쓸 수 있는 3개 메뉴. 셋 다 DB를 쓰지 않고, 외부 서비스를 그대로 노출하지 않기 위해 "서버(Vercel 함수)가 외부 API를 대신 호출해서 정리된 형태로 내려준다"는 동일한 패턴을 씁니다.
+
+### 지도 (`/map`, `MapPage.tsx`)
+- 카카오맵 JavaScript SDK를 클라이언트에서 동적으로 `<script>` 삽입해 로드 (`VITE_KAKAO_MAP_KEY` 필요, 빌드 타임에 번들에 박힘)
+- 카카오 디벨로퍼스 콘솔의 **플랫폼(Web) 도메인 등록**이 안 되어 있으면 `domain mismatched` 에러가 나므로, 로컬(`http://localhost:5173`)과 배포 도메인 둘 다 등록해야 함
+- 서버 프록시 없이 브라우저가 카카오 SDK를 직접 호출하는 유일한 페이지 (지도 SDK 특성상 서버 프록시가 의미 없음)
+
+### 시세 (`/stock`, `StockPage.tsx` + `api/stocks/index.ts`)
+- `api/stocks/index.ts`가 네이버 금융이 내부적으로 쓰는 실시간 시세 JSON(`polling.finance.naver.com`)을 서버에서 호출해 4개 고정 종목(삼성전자 005930, SK하이닉스 000660, 카카오 035720, 두산에너빌리티 034020)만 추려서 반환
+- `finance.naver.com`의 HTML 페이지 자체는 `robots.txt`가 일반 크롤러를 막고 있어 직접 파싱하지 않음 — `polling.finance.naver.com`은 별도 서브도메인이라 그 제한을 받지 않고, 페이지가 실제로 쓰는 API라 HTML 파싱보다 안정적
+- 비공식/무서화되지 않은 API라 네이버가 구조를 바꾸면 깨질 수 있음
+- 프론트는 10초마다 자동 재요청 + 수동 "새로고침" 버튼 + 다음 갱신까지 남은 초를 보여주는 카운트다운(1초 간격 별도 타이머)을 가짐, 페이지를 벗어나면(`useEffect` cleanup) 두 타이머 모두 정리됨
+
+### 번역 (`/translate`, `TranslatePage.tsx` + `api/translate/index.ts`)
+- [MyMemory Translation API](https://mymemory.translated.net/doc/spec.php)를 서버에서 프록시 — 가입/API 키 없이 쓸 수 있는 몇 안 되는 무료 번역 API라서 선택 (DeepL은 2026-07부로 신규 무료 API 발급 중단, 파파고는 유료 전용, Google/Azure는 카드 등록이 필요한 유료 크레딧 기반 무료 티어)
+- 무료 한도: 요청당 최대 500 byte, 익명 기준 하루 5,000자 (개인 프로젝트 트래픽엔 충분)
+- 프론트에서 UTF-8 byte 수를 계산해 480byte를 넘으면 번역 버튼을 막고 안내 문구를 보여줌 (`TranslatePage.tsx`의 `byteLength()`)
+- 언어 스왑 버튼은 소스/타깃 언어와 입력/결과 텍스트를 함께 교체
