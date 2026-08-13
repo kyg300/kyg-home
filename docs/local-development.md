@@ -14,7 +14,7 @@ VITE_KAKAO_MAP_KEY=your-kakao-javascript-key
 - `DATABASE_URL`, `JWT_SECRET`이 없으면 API 함수가 모듈 로드 시점에 즉시 에러를 던집니다.
 - `BLOB_READ_WRITE_TOKEN`은 Vercel 프로젝트의 Blob 스토어(Storage 탭)에서 발급됩니다. 없으면 첨부파일 관련 기능만 실패하고 나머지는 정상 동작합니다.
 - `VITE_KAKAO_MAP_KEY`는 [카카오 디벨로퍼스](https://developers.kakao.com)에서 발급받는 JavaScript 키입니다. `/map` 페이지에만 쓰이고, 값이 없으면 그 페이지만 에러 메시지를 보여주고 나머지는 정상 동작합니다. `VITE_` 접두사가 붙은 변수는 Vite가 **빌드 타임에 번들에 그대로 박아 넣으므로** 값을 바꾼 뒤에는 dev 서버를 재시작해야 반영됩니다. 카카오 디벨로퍼스 콘솔의 플랫폼(Web) 설정에 `http://localhost:5173`을 등록해야 로컬에서 지도가 뜹니다.
-- `/api/stocks`, `/api/translate`는 별도 환경변수나 키가 필요 없습니다 (각각 네이버 시세 폴링 API, MyMemory 번역 API를 서버에서 그대로 호출).
+- `/api/stocks`, `/api/translate`, `/api/news`는 별도 환경변수나 키가 필요 없습니다 (각각 네이버 시세 폴링 API, MyMemory 번역 API, 스포츠 RSS 피드 3개를 서버에서 그대로 호출).
 
 ## 서버 두 개를 같이 띄우기
 

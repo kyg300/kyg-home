@@ -22,7 +22,7 @@ Vercel 프로젝트 → **Settings → Environment Variables**에 아래 세 개
 
 `VITE_KAKAO_MAP_KEY`를 설정한 뒤에는 카카오 디벨로퍼스 콘솔(내 애플리케이션 → 앱 설정 → 플랫폼)에 **실제 배포 도메인**(예: `https://kyg-home.vercel.app`, 커스텀 도메인을 쓰면 그것도 추가)을 Web 플랫폼으로 등록해야 합니다. 등록하지 않으면 `domain mismatched` 에러가 나며 지도가 뜨지 않습니다.
 
-`/api/stocks`, `/api/translate`는 외부 API(네이버 시세, MyMemory 번역)를 서버에서 그대로 호출하는 구조라 별도 환경변수가 필요 없습니다.
+`/api/stocks`, `/api/translate`, `/api/news`는 외부 API(네이버 시세, MyMemory 번역, 스포츠 RSS)를 서버에서 그대로 호출하는 구조라 별도 환경변수가 필요 없습니다.
 
 ## Blob 스토어 설정
 
@@ -50,3 +50,4 @@ node --env-file=.env scripts/_apply-schema.mjs
 - `/map` → 지도가 실제로 뜨는지 (안 뜨면 `VITE_KAKAO_MAP_KEY` 미설정 또는 배포 도메인 미등록 확인)
 - `/stock` → 4개 종목 시세가 나오는지
 - `/translate` → 텍스트 입력 후 번역 결과가 나오는지
+- `/news` → 스포츠 기사 목록이 나오고, 제목 클릭 시 새 탭에서 원문이 열리는지

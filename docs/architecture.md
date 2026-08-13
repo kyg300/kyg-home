@@ -32,10 +32,12 @@ api/                     Vercel Serverless Functions (파일 경로 = URL 경로
     index.ts              네이버 시세 폴링 API를 서버에서 대신 호출해 정리된 형태로 반환 (인증 불필요)
   translate/
     index.ts              MyMemory 번역 API 프록시 (인증 불필요, 키/가입 불필요)
+  news/
+    index.ts              스포츠 RSS 피드 3개를 서버에서 가져와 파싱·병합·정렬해 반환 (인증 불필요)
 
 src/
   pages/                  Home, Login, Signup, BoardList, PostDetail, PostEditor, NotFound,
-                          MapPage(/map), StockPage(/stock), TranslatePage(/translate)
+                          MapPage(/map), StockPage(/stock), TranslatePage(/translate), NewsPage(/news)
   components/             Navbar, ProtectedRoute
   context/AuthContext.tsx 로그인 상태 전역 관리
   lib/
@@ -97,9 +99,9 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 - 글 수정 시 기존 첨부파일 목록과 새로 제출된 목록을 비교해서, 빠진 것은 DB row 삭제 + `del()`로 Blob 파일도 삭제
 - 글 삭제 시에도 연결된 첨부파일의 Blob 파일을 먼저 지운 뒤 게시글을 삭제 (DB row는 `on delete cascade`로 자동 정리되지만 Blob 파일은 별도 API 호출로 지워야 함)
 
-## 지도 / 시세 / 번역 (독립 유틸리티 페이지)
+## 지도 / 시세 / 번역 / 스포츠 뉴스 (독립 유틸리티 페이지)
 
-게시판과 무관하게 로그인 없이 누구나 쓸 수 있는 3개 메뉴. 셋 다 DB를 쓰지 않고, 외부 서비스를 그대로 노출하지 않기 위해 "서버(Vercel 함수)가 외부 API를 대신 호출해서 정리된 형태로 내려준다"는 동일한 패턴을 씁니다.
+게시판과 무관하게 로그인 없이 누구나 쓸 수 있는 4개 메뉴. 전부 DB를 쓰지 않고, 외부 서비스를 그대로 노출하지 않기 위해 "서버(Vercel 함수)가 외부 API를 대신 호출해서 정리된 형태로 내려준다"는 동일한 패턴을 씁니다 (지도만 예외 — 아래 참고).
 
 ### 지도 (`/map`, `MapPage.tsx`)
 - 카카오맵 JavaScript SDK를 클라이언트에서 동적으로 `<script>` 삽입해 로드 (`VITE_KAKAO_MAP_KEY` 필요, 빌드 타임에 번들에 박힘)
@@ -117,3 +119,10 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 - 무료 한도: 요청당 최대 500 byte, 익명 기준 하루 5,000자 (개인 프로젝트 트래픽엔 충분)
 - 프론트에서 UTF-8 byte 수를 계산해 480byte를 넘으면 번역 버튼을 막고 안내 문구를 보여줌 (`TranslatePage.tsx`의 `byteLength()`)
 - 언어 스왑 버튼은 소스/타깃 언어와 입력/결과 텍스트를 함께 교체
+
+### 스포츠 뉴스 (`/news`, `NewsPage.tsx` + `api/news/index.ts`)
+- 고정된 RSS 피드 3개(연합뉴스 `yna.co.kr/rss/sports.xml`, SBS `news.sbs.co.kr/news/SectionRssFeed.do?sectionId=09`, 동아일보 `rss.donga.com/sports.xml`)를 서버에서 병렬로 가져와 하나로 합침
+- XML 파싱에 별도 라이브러리를 쓰지 않고, RSS 2.0의 `<item>` 블록에서 `<title>`/`<link>`/`<pubDate>`만 정규식으로 뽑아내는 가벼운 파서를 직접 구현 (`api/news/index.ts`의 `parseFeed`/`extractTag`) — CDATA로 감싼 값과 안 감싼 값 둘 다 처리하고 HTML 엔티티(`&amp;` 등)도 디코딩함
+- 한 피드가 실패해도 전체가 죽지 않도록 `Promise.allSettled`로 가져오고, 성공한 피드만 합쳐서 `pubDate` 기준 최신순 정렬 후 상위 30개만 반환
+- 네이버는 뉴스 RSS를 2022년에 완전히 종료해서 후보에서 제외함 (실제로 예전 RSS 주소가 XML 대신 302 리다이렉트만 반환하는 것을 확인)
+- 프론트는 목록만 보여주고, 각 제목은 `target="_blank" rel="noopener noreferrer"`로 원문을 새 탭에 염
