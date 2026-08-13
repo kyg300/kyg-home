@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, type Stock } from '../lib/api'
 
 const REFRESH_INTERVAL_MS = 10000
+const REFRESH_INTERVAL_SEC = REFRESH_INTERVAL_MS / 1000
 
 function directionClass(direction: string) {
   if (direction === '상승') return 'stock-change-rise'
@@ -14,10 +15,12 @@ export default function StockPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [secondsLeft, setSecondsLeft] = useState(REFRESH_INTERVAL_SEC)
   const cancelledRef = useRef(false)
 
   const load = useCallback(() => {
     setRefreshing(true)
+    setSecondsLeft(REFRESH_INTERVAL_SEC)
     api
       .getStocks()
       .then(({ stocks }) => {
@@ -47,13 +50,23 @@ export default function StockPage() {
     }
   }, [load])
 
+  useEffect(() => {
+    const tick = setInterval(() => {
+      setSecondsLeft((s) => Math.max(s - 1, 0))
+    }, 1000)
+    return () => clearInterval(tick)
+  }, [])
+
   return (
     <section className="page">
       <div className="page-header">
         <h1>시세</h1>
-        <button type="button" className="btn btn-secondary" onClick={load} disabled={refreshing}>
-          {refreshing ? '새로고침 중...' : '새로고침'}
-        </button>
+        <div className="stock-refresh-controls">
+          <span className="status-text">{secondsLeft}초 후 자동 갱신</span>
+          <button type="button" className="btn btn-secondary" onClick={load} disabled={refreshing}>
+            {refreshing ? '새로고침 중...' : '새로고침'}
+          </button>
+        </div>
       </div>
       {loading && <p className="status-text">불러오는 중...</p>}
       {error && <p className="form-error">{error}</p>}
