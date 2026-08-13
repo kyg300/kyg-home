@@ -20,6 +20,7 @@ export default function Navbar() {
         <Link to="/map">지도</Link>
         <Link to="/stock">시세</Link>
         <Link to="/translate">번역</Link>
+        <Link to="/news">스포츠</Link>
         {user ? (
           <>
             <span className="navbar-user">{user.username}님</span>

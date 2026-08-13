@@ -16,6 +16,7 @@ const routes = [
   { method: null, pattern: /^\/api\/attachments\/([^/]+)$/, params: ['id'], file: '../api/attachments/[id].ts' },
   { method: null, pattern: /^\/api\/stocks$/, params: [], file: '../api/stocks/index.ts' },
   { method: null, pattern: /^\/api\/translate$/, params: [], file: '../api/translate/index.ts' },
+  { method: null, pattern: /^\/api\/news$/, params: [], file: '../api/news/index.ts' },
 ]
 
 const handlerCache = new Map()

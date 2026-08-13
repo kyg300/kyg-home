@@ -53,6 +53,13 @@ export interface KeptAttachment {
 
 export type AttachmentPayload = NewAttachment | KeptAttachment
 
+export interface Article {
+  title: string
+  link: string
+  pubDate: string
+  source: string
+}
+
 export interface Stock {
   code: string
   name: string
@@ -99,6 +106,7 @@ export const api = {
     request<{ translatedText: string }>(
       `/translate?${new URLSearchParams({ text, source, target }).toString()}`,
     ),
+  getNews: () => request<{ articles: Article[] }>('/news'),
   uploadAttachment: async (file: File): Promise<NewAttachment> => {
     const blob = await upload(file.name, file, {
       access: 'private',

@@ -97,6 +97,31 @@ a:hover {
   margin-top: var(--spacing-3);
 }
 
+.news-list {
+  padding: 0;
+  margin: var(--spacing-3) 0 0;
+}
+
+.news-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.news-title {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.news-title:hover {
+  color: var(--color-primary);
+}
+
+.news-meta {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
 .translate-form {
   margin-top: var(--spacing-3);
   display: flex;

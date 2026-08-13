@@ -5,6 +5,7 @@ import BoardList from './pages/BoardList'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import MapPage from './pages/MapPage'
+import NewsPage from './pages/NewsPage'
 import NotFound from './pages/NotFound'
 import PostDetail from './pages/PostDetail'
 import PostEditor from './pages/PostEditor'
@@ -23,6 +24,7 @@ function App() {
           <Route path="/map" element={<MapPage />} />
           <Route path="/stock" element={<StockPage />} />
           <Route path="/translate" element={<TranslatePage />} />
+          <Route path="/news" element={<NewsPage />} />
           <Route path="/signup" element={<Signup />} />
           <Route
             path="/board"
