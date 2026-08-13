@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import BoardList from './pages/BoardList'
 import Home from './pages/Home'
 import Login from './pages/Login'
+import MapPage from './pages/MapPage'
 import NotFound from './pages/NotFound'
 import PostDetail from './pages/PostDetail'
 import PostEditor from './pages/PostEditor'
@@ -17,6 +18,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/map" element={<MapPage />} />
           <Route path="/signup" element={<Signup />} />
           <Route
             path="/board"
