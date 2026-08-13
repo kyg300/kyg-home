@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, type Stock } from '../lib/api'
 
-const REFRESH_INTERVAL_MS = 15000
+const REFRESH_INTERVAL_MS = 10000
 
 function directionClass(direction: string) {
   if (direction === '상승') return 'stock-change-rise'
@@ -12,37 +12,48 @@ function directionClass(direction: string) {
 export default function StockPage() {
   const [stocks, setStocks] = useState<Stock[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const cancelledRef = useRef(false)
+
+  const load = useCallback(() => {
+    setRefreshing(true)
+    api
+      .getStocks()
+      .then(({ stocks }) => {
+        if (!cancelledRef.current) {
+          setStocks(stocks)
+          setError(null)
+        }
+      })
+      .catch((err) => {
+        if (!cancelledRef.current) setError(err instanceof Error ? err.message : '시세를 불러오지 못했습니다')
+      })
+      .finally(() => {
+        if (!cancelledRef.current) {
+          setLoading(false)
+          setRefreshing(false)
+        }
+      })
+  }, [])
 
   useEffect(() => {
-    let cancelled = false
-
-    function load() {
-      api
-        .getStocks()
-        .then(({ stocks }) => {
-          if (!cancelled) setStocks(stocks)
-        })
-        .catch((err) => {
-          if (!cancelled) setError(err instanceof Error ? err.message : '시세를 불러오지 못했습니다')
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false)
-        })
-    }
-
+    cancelledRef.current = false
     load()
     const timer = setInterval(load, REFRESH_INTERVAL_MS)
     return () => {
-      cancelled = true
+      cancelledRef.current = true
       clearInterval(timer)
     }
-  }, [])
+  }, [load])
 
   return (
     <section className="page">
       <div className="page-header">
         <h1>시세</h1>
+        <button type="button" className="btn btn-secondary" onClick={load} disabled={refreshing}>
+          {refreshing ? '새로고침 중...' : '새로고침'}
+        </button>
       </div>
       {loading && <p className="status-text">불러오는 중...</p>}
       {error && <p className="form-error">{error}</p>}
