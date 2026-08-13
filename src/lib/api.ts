@@ -95,6 +95,10 @@ export const api = {
     }),
   deletePost: (id: string) => request<{ ok: true }>(`/posts/${id}`, { method: 'DELETE' }),
   getStocks: () => request<{ stocks: Stock[] }>('/stocks'),
+  translate: (text: string, source: string, target: string) =>
+    request<{ translatedText: string }>(
+      `/translate?${new URLSearchParams({ text, source, target }).toString()}`,
+    ),
   uploadAttachment: async (file: File): Promise<NewAttachment> => {
     const blob = await upload(file.name, file, {
       access: 'private',

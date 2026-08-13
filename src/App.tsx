@@ -10,6 +10,7 @@ import PostDetail from './pages/PostDetail'
 import PostEditor from './pages/PostEditor'
 import Signup from './pages/Signup'
 import StockPage from './pages/StockPage'
+import TranslatePage from './pages/TranslatePage'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/stock" element={<StockPage />} />
+          <Route path="/translate" element={<TranslatePage />} />
           <Route path="/signup" element={<Signup />} />
           <Route
             path="/board"

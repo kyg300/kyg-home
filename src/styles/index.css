@@ -97,6 +97,58 @@ a:hover {
   margin-top: var(--spacing-3);
 }
 
+.translate-form {
+  margin-top: var(--spacing-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.translate-lang-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.translate-lang-row select {
+  flex: 1;
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.translate-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-3);
+}
+
+.translate-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.translate-textarea {
+  width: 100%;
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+}
+
+@media (max-width: 640px) {
+  .translate-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
 .stock-refresh-controls {
   display: flex;
   align-items: center;
