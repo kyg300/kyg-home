@@ -9,6 +9,7 @@ import NotFound from './pages/NotFound'
 import PostDetail from './pages/PostDetail'
 import PostEditor from './pages/PostEditor'
 import Signup from './pages/Signup'
+import StockPage from './pages/StockPage'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/stock" element={<StockPage />} />
           <Route path="/signup" element={<Signup />} />
           <Route
             path="/board"

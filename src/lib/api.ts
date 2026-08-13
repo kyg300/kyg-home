@@ -53,6 +53,21 @@ export interface KeptAttachment {
 
 export type AttachmentPayload = NewAttachment | KeptAttachment
 
+export interface Stock {
+  code: string
+  name: string
+  price: string
+  change: string
+  changeDirection: string
+  changeRate: string
+  open: string
+  high: string
+  low: string
+  volume: string
+  marketStatus: string
+  tradedAt: string
+}
+
 export const api = {
   signup: (email: string, username: string, password: string) =>
     request<{ user: User }>('/auth/signup', {
@@ -79,6 +94,7 @@ export const api = {
       body: JSON.stringify({ title, content, attachments }),
     }),
   deletePost: (id: string) => request<{ ok: true }>(`/posts/${id}`, { method: 'DELETE' }),
+  getStocks: () => request<{ stocks: Stock[] }>('/stocks'),
   uploadAttachment: async (file: File): Promise<NewAttachment> => {
     const blob = await upload(file.name, file, {
       access: 'private',

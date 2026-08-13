@@ -10,6 +10,8 @@
   --color-accent-soft: #e7f8f1;
   --color-danger: #d1453b;
   --color-danger-hover: #b23a31;
+  --color-rise: #d1453b;
+  --color-fall: #1c64f2;
   --radius: 8px;
   --radius-lg: 16px;
   --spacing-1: 4px;
@@ -93,6 +95,64 @@ a:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   margin-top: var(--spacing-3);
+}
+
+.stock-list {
+  padding: 0;
+  margin: var(--spacing-3) 0 0;
+}
+
+.stock-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.stock-card-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-2);
+}
+
+.stock-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.stock-code {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.stock-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-2);
+}
+
+.stock-price {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.stock-change-rise {
+  color: var(--color-rise);
+}
+
+.stock-change-fall {
+  color: var(--color-fall);
+}
+
+.stock-change-flat {
+  color: var(--color-text-muted);
+}
+
+.stock-detail-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
 }
 
 .btn {
