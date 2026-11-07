@@ -75,6 +75,36 @@ export interface Stock {
   tradedAt: string
 }
 
+export interface Exchange {
+  code: string
+  name: string
+  price: string
+  change: string
+  changeDirection: string
+  changeRate: string
+  tradedAt: string
+}
+
+export interface Coin {
+  code: string
+  name: string
+  price: string
+  change: string
+  changeDirection: string
+  changeRate: string
+}
+
+export interface Weather {
+  location: string
+  temperature: number
+  windspeed: number
+  isDay: boolean
+  condition: string
+  icon: string
+  todayMax: number
+  todayMin: number
+}
+
 export const api = {
   login: (email: string, password: string) =>
     request<{ user: User }>('/auth/login', {
@@ -96,7 +126,8 @@ export const api = {
       body: JSON.stringify({ title, content, attachments }),
     }),
   deletePost: (id: string) => request<{ ok: true }>(`/posts/${id}`, { method: 'DELETE' }),
-  getStocks: () => request<{ stocks: Stock[] }>('/stocks'),
+  getStocks: () => request<{ stocks: Stock[]; exchanges: Exchange[]; coins: Coin[] }>('/stocks'),
+  getWeather: () => request<Weather>('/weather'),
   translate: (text: string, source: string, target: string) =>
     request<{ translatedText: string }>(
       `/translate?${new URLSearchParams({ text, source, target }).toString()}`,

@@ -29,11 +29,13 @@ api/                     Vercel Serverless Functions (파일 경로 = URL 경로
   attachments/
     [id].ts               로그인한 사용자에게만 첨부파일을 스트리밍하는 프록시
   stocks/
-    index.ts              네이버 시세 폴링 API를 서버에서 대신 호출해 정리된 형태로 반환 (로그인 필요)
+    index.ts              네이버 시세 폴링 API(주식)+네이버페이 증권 환율 API+업비트 코인 API를 병렬 호출해 반환 (로그인 필요)
   translate/
     index.ts              MyMemory 번역 API 프록시 (키/가입 불필요, 로그인은 필요)
   news/
     index.ts              스포츠 RSS 피드 3개를 서버에서 가져와 파싱·병합·정렬해 반환 (로그인 필요)
+  weather/
+    index.ts              Open-Meteo API로 서울 날씨(현재/오늘 최고·최저)를 가져와 반환 (로그인 필요, 홈 화면 위젯용)
 
 src/
   pages/                  Home, Login, BoardList, PostDetail, PostEditor, NotFound,
@@ -114,6 +116,8 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 - `api/stocks/index.ts`가 네이버 금융이 내부적으로 쓰는 실시간 시세 JSON(`polling.finance.naver.com`)을 서버에서 호출해 4개 고정 종목(삼성전자 005930, SK하이닉스 000660, 카카오 035720, 두산에너빌리티 034020)만 추려서 반환
 - `finance.naver.com`의 HTML 페이지 자체는 `robots.txt`가 일반 크롤러를 막고 있어 직접 파싱하지 않음 — `polling.finance.naver.com`은 별도 서브도메인이라 그 제한을 받지 않고, 페이지가 실제로 쓰는 API라 HTML 파싱보다 안정적
 - 비공식/무서화되지 않은 API라 네이버가 구조를 바꾸면 깨질 수 있음
+- 같은 엔드포인트가 **환율**(네이버페이 증권의 `m.stock.naver.com/front-api/marketIndex/prices?category=exchange&reutersCode=FX_USDKRW` 등, 통화당 개별 호출이라 `Promise.all`로 4개 병렬 호출 — USD/EUR/JPY(100엔 기준)/CNY)과 **코인**(업비트 공개 API `api.upbit.com/v1/ticker`, 키 불필요, BTC/ETH/XRP)도 함께 반환 (`{ stocks, exchanges, coins }`)
+- 세 그룹을 `Promise.allSettled`로 병렬 호출해서 한쪽이 실패해도 나머지는 정상 반환, 셋 다 비어있을 때만 502
 - 프론트는 10초마다 자동 재요청 + 수동 "새로고침" 버튼 + 다음 갱신까지 남은 초를 보여주는 카운트다운(1초 간격 별도 타이머)을 가짐, 페이지를 벗어나면(`useEffect` cleanup) 두 타이머 모두 정리됨
 
 ### 번역 (`/translate`, `TranslatePage.tsx` + `api/translate/index.ts`)
@@ -128,3 +132,9 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 - 한 피드가 실패해도 전체가 죽지 않도록 `Promise.allSettled`로 가져오고, 성공한 피드만 합쳐서 `pubDate` 기준 최신순 정렬 후 상위 30개만 반환
 - 네이버는 뉴스 RSS를 2022년에 완전히 종료해서 후보에서 제외함 (실제로 예전 RSS 주소가 XML 대신 302 리다이렉트만 반환하는 것을 확인)
 - 프론트는 목록만 보여주고, 각 제목은 `target="_blank" rel="noopener noreferrer"`로 원문을 새 탭에 염
+
+## 날씨 위젯 (홈 화면, `api/weather/index.ts`)
+- 별도 페이지가 아니라 `Home.tsx`의 hero 영역에 박힌 위젯 — 로그인했을 때만 호출/표시 (다른 유틸리티와 동일하게 `requireAuth`로 서버에서도 401 방어)
+- [Open-Meteo](https://open-meteo.com) 무료 API를 키/가입 없이 호출 (위도·경도 기반이라 서울 좌표를 고정값으로 사용, 다른 도시 지원은 안 함)
+- `current_weather`(현재 기온/풍속/주야 여부/날씨 코드)와 `daily`(오늘 최고/최저기온) 두 블록을 한 번에 요청
+- WMO 날씨 코드(0, 1, 2, 3, 45...)를 한글 설명 + 이모지로 매핑하는 테이블을 직접 유지 (`WEATHER_CODE_MAP`) — API가 코드만 주고 텍스트를 안 줌

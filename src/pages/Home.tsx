@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { api, type Post } from '../lib/api'
+import { api, type Post, type Weather } from '../lib/api'
 
 function snippet(content: string, length = 70) {
   const trimmed = content.trim()
@@ -14,6 +14,7 @@ export default function Home() {
   const [query, setQuery] = useState('')
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
+  const [weather, setWeather] = useState<Weather | null>(null)
 
   useEffect(() => {
     if (!user) {
@@ -27,6 +28,17 @@ export default function Home() {
       .then(({ posts }) => setPosts(posts.slice(0, 6)))
       .catch(() => setPosts([]))
       .finally(() => setLoading(false))
+  }, [user])
+
+  useEffect(() => {
+    if (!user) {
+      setWeather(null)
+      return
+    }
+    api
+      .getWeather()
+      .then(setWeather)
+      .catch(() => setWeather(null))
   }, [user])
 
   function handleSearch(e: FormEvent) {
@@ -43,6 +55,17 @@ export default function Home() {
             <span className="hero-title-accent">kyg</span>-home
           </h1>
           <p className="hero-tagline">기록하고, 나누고, 다시 찾아보는 공간</p>
+          {weather && (
+            <div className="weather-widget">
+              <span className="weather-icon">{weather.icon}</span>
+              <span className="weather-temp">{Math.round(weather.temperature)}°C</span>
+              <span className="weather-condition">{weather.condition}</span>
+              <span className="weather-range">
+                최고 {Math.round(weather.todayMax)}° / 최저 {Math.round(weather.todayMin)}°
+              </span>
+              <span className="weather-location">{weather.location}</span>
+            </div>
+          )}
           <form className="search-bar" onSubmit={handleSearch}>
             <input
               className="search-input"
