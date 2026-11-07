@@ -3,6 +3,7 @@
 ## 접속 URL
 
 https://kyg-home.vercel.app/
+test@test.com
 
 ## 배포 방식
 
