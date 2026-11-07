@@ -40,12 +40,14 @@ api/                     Vercel Serverless Functions (파일 경로 = URL 경로
 
 src/
   pages/                  Home, Login, BoardList, PostDetail, PostEditor, NotFound,
-                          MapPage(/map), StockPage(/stock), TranslatePage(/translate), NewsPage(/news)
+                          MapPage(/map), StockPage(/stock), TranslatePage(/translate), NewsPage(/news),
+                          FortunePage(/fortune)
   components/             Navbar, ProtectedRoute
   context/AuthContext.tsx 로그인 상태 전역 관리
   lib/
     api.ts                백엔드 API 호출 래퍼 + 첨부파일 업로드
     attachments.ts        첨부파일 허용 타입/용량/개수 상수 (프론트 쪽, api/_lib와 별도 사본)
+    fortune.ts            띠별 오늘의 운세 생성 로직 (날짜+띠 시드 해시, 외부 API 없음)
   styles/index.css        전역 스타일 (디자인 토큰은 :root 변수)
   vite-env.d.ts           `import.meta.env`에 커스텀 환경변수(`VITE_KAKAO_MAP_KEY`) 타입 추가
 
@@ -102,11 +104,11 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 - 글 수정 시 기존 첨부파일 목록과 새로 제출된 목록을 비교해서, 빠진 것은 DB row 삭제 + `del()`로 Blob 파일도 삭제
 - 글 삭제 시에도 연결된 첨부파일의 Blob 파일을 먼저 지운 뒤 게시글을 삭제 (DB row는 `on delete cascade`로 자동 정리되지만 Blob 파일은 별도 API 호출로 지워야 함)
 
-## 지도 / 시세 / 번역 / 스포츠 뉴스 (독립 유틸리티 페이지)
+## 지도 / 시세 / 번역 / 스포츠 뉴스 / 운세 (독립 유틸리티 페이지)
 
-게시판과 별개의 4개 메뉴. 전부 DB를 쓰지 않고, 외부 서비스를 그대로 노출하지 않기 위해 "서버(Vercel 함수)가 외부 API를 대신 호출해서 정리된 형태로 내려준다"는 동일한 패턴을 씁니다 (지도만 예외 — 아래 참고).
+게시판과 별개의 5개 메뉴. 전부 DB를 쓰지 않고, 외부 서비스를 그대로 노출하지 않기 위해 "서버(Vercel 함수)가 외부 API를 대신 호출해서 정리된 형태로 내려준다"는 동일한 패턴을 씁니다 (지도·운세는 예외 — 아래 참고).
 
-게시판과 동일하게 **로그인해야 접근 가능** — 프론트는 `/map`, `/stock`, `/translate`, `/news`를 `ProtectedRoute`로 감싸고, `api/stocks`, `api/translate`, `api/news`도 각각 `requireAuth`로 401을 반환해 서버 쪽에서 최종 방어함 (지도는 별도 백엔드 호출이 없어 프론트 라우트 가드만 적용).
+게시판과 동일하게 **로그인해야 접근 가능** — 프론트는 `/map`, `/stock`, `/translate`, `/news`, `/fortune`을 `ProtectedRoute`로 감싸고, `api/stocks`, `api/translate`, `api/news`도 각각 `requireAuth`로 401을 반환해 서버 쪽에서 최종 방어함 (지도·운세는 백엔드 호출 자체가 없어 프론트 라우트 가드만 적용).
 
 ### 지도 (`/map`, `MapPage.tsx`)
 - 카카오맵 JavaScript SDK를 클라이언트에서 동적으로 `<script>` 삽입해 로드 (`VITE_KAKAO_MAP_KEY` 필요, 빌드 타임에 번들에 박힘)
@@ -133,6 +135,12 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 - 한 피드가 실패해도 전체가 죽지 않도록 `Promise.allSettled`로 가져오고, 성공한 피드만 합쳐서 `pubDate` 기준 최신순 정렬 후 상위 30개만 반환
 - 네이버는 뉴스 RSS를 2022년에 완전히 종료해서 후보에서 제외함 (실제로 예전 RSS 주소가 XML 대신 302 리다이렉트만 반환하는 것을 확인)
 - 프론트는 목록만 보여주고, 각 제목은 `target="_blank" rel="noopener noreferrer"`로 원문을 새 탭에 염
+
+### 오늘의 운세 (`/fortune`, `FortunePage.tsx` + `src/lib/fortune.ts`)
+- 실제 점성술 데이터나 외부 API가 아니라, **`날짜+띠` 문자열을 시드로 한 결정론적 해시**로 미리 준비된 문구 풀(총운/금전운/애정운/건강운 각 7~10개)에서 하나씩 골라 보여주는 방식 — 같은 날 같은 띠는 몇 번을 새로고침해도 같은 결과, 날짜가 바뀌면 자동으로 바뀜
+- 외부 호출이 없어서 지도와 마찬가지로 백엔드 없이 프론트에서만 계산 (`getDailyFortune()`)
+- 선택한 띠는 `localStorage`에 저장해서 다음 방문 때도 유지 (브라우저 로컬 저장소라 기기별로 따로 기억됨)
+- 운세 점수(50~100)도 같은 해시 방식으로 생성
 
 ## 날씨 위젯 (홈 화면, `api/weather/index.ts`)
 - 별도 페이지가 아니라 `Home.tsx`의 hero 영역에 박힌 위젯 — 로그인했을 때만 호출/표시 (다른 유틸리티와 동일하게 `requireAuth`로 서버에서도 401 방어)

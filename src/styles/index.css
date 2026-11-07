@@ -689,3 +689,80 @@ a:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.zodiac-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: var(--spacing-2);
+  margin: var(--spacing-3) 0;
+}
+
+.zodiac-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.zodiac-chip:hover {
+  border-color: var(--color-primary);
+}
+
+.zodiac-chip-active {
+  border-color: var(--color-primary);
+  background: var(--color-accent-soft);
+}
+
+.zodiac-emoji {
+  font-size: 1.6rem;
+}
+
+.fortune-card {
+  margin-top: var(--spacing-3);
+}
+
+.fortune-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.fortune-header h2 {
+  margin: 0;
+  flex: 1;
+}
+
+.fortune-emoji {
+  font-size: 1.8rem;
+}
+
+.fortune-score {
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.fortune-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--spacing-2) var(--spacing-3);
+}
+
+.fortune-list dt {
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.fortune-list dd {
+  margin: 0;
+}
