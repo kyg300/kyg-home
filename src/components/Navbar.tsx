@@ -23,7 +23,6 @@ export default function Navbar() {
             <Link to="/stock">시세</Link>
             <Link to="/translate">번역</Link>
             <Link to="/news">스포츠</Link>
-            <Link to="/football">유럽축구</Link>
             <span className="navbar-user">{user.username}님</span>
             <button className="btn btn-ghost" onClick={handleLogout}>
               로그아웃

@@ -94,32 +94,6 @@ export interface Coin {
   changeRate: string
 }
 
-export interface FootballMatch {
-  date: string
-  time: string
-  homeTeam: string
-  awayTeam: string
-  homeScore: string | null
-  awayScore: string | null
-}
-
-export interface FootballLeagueSummary {
-  id: string
-  name: string
-  recent: FootballMatch | null
-  next: FootballMatch | null
-}
-
-export interface FootballLiveMatch {
-  league: string
-  homeTeam: string
-  awayTeam: string
-  homeScore: string
-  awayScore: string
-  status: string
-  minute: string
-}
-
 export interface Weather {
   location: string
   temperature: number
@@ -159,8 +133,6 @@ export const api = {
       `/translate?${new URLSearchParams({ text, source, target }).toString()}`,
     ),
   getNews: () => request<{ articles: Article[] }>('/news'),
-  getFootball: () =>
-    request<{ leagues: FootballLeagueSummary[]; live: FootballLiveMatch[]; articles: Article[] }>('/football'),
   uploadAttachment: async (file: File): Promise<NewAttachment> => {
     const blob = await upload(file.name, file, {
       access: 'private',
