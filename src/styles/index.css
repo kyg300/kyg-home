@@ -207,6 +207,28 @@ a:hover {
   font-size: 0.85rem;
 }
 
+.football-match {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.football-match-caption {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.football-match-teams {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-weight: 600;
+}
+
+.football-match-score {
+  color: var(--color-primary);
+}
+
 .stock-price-row {
   display: flex;
   align-items: baseline;

@@ -17,6 +17,7 @@ const routes = [
   { method: null, pattern: /^\/api\/weather$/, params: [], file: '../api/weather/index.ts' },
   { method: null, pattern: /^\/api\/translate$/, params: [], file: '../api/translate/index.ts' },
   { method: null, pattern: /^\/api\/news$/, params: [], file: '../api/news/index.ts' },
+  { method: null, pattern: /^\/api\/football$/, params: [], file: '../api/football/index.ts' },
 ]
 
 const handlerCache = new Map()

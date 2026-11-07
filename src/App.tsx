@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import BoardList from './pages/BoardList'
+import FootballPage from './pages/FootballPage'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import MapPage from './pages/MapPage'
@@ -49,6 +50,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <NewsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/football"
+            element={
+              <ProtectedRoute>
+                <FootballPage />
               </ProtectedRoute>
             }
           />
