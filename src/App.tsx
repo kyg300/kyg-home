@@ -21,10 +21,38 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/map" element={<MapPage />} />
-          <Route path="/stock" element={<StockPage />} />
-          <Route path="/translate" element={<TranslatePage />} />
-          <Route path="/news" element={<NewsPage />} />
+          <Route
+            path="/map"
+            element={
+              <ProtectedRoute>
+                <MapPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stock"
+            element={
+              <ProtectedRoute>
+                <StockPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/translate"
+            element={
+              <ProtectedRoute>
+                <TranslatePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/news"
+            element={
+              <ProtectedRoute>
+                <NewsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/signup" element={<Signup />} />
           <Route
             path="/board"

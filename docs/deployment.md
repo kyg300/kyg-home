@@ -1,5 +1,9 @@
 # 배포 (Vercel)
 
+## 접속 URL
+
+https://kyg-home.vercel.app/
+
 ## 배포 방식
 
 GitHub 저장소(`kyg300/kyg-home`)와 Vercel 프로젝트가 연동되어 있어서, **`main` 브랜치에 push하면 자동으로 재배포**됩니다. 별도로 `vercel` CLI를 쓰거나 대시보드에서 수동 배포할 필요는 없습니다.

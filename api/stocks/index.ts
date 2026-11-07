@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { requireAuth } from '../_lib/auth.js'
 
 const STOCK_CODES = ['005930', '000660', '035720', '034020']
 
@@ -21,6 +22,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET')
     return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  if (!requireAuth(req)) {
+    return res.status(401).json({ error: '로그인이 필요합니다' })
   }
 
   const url = `https://polling.finance.naver.com/api/realtime/domestic/stock/${STOCK_CODES.join(',')}`

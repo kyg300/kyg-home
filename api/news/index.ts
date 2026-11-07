@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { requireAuth } from '../_lib/auth.js'
 
 const FEEDS = [
   { source: '연합뉴스', url: 'https://www.yna.co.kr/rss/sports.xml' },
@@ -45,6 +46,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET')
     return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  if (!requireAuth(req)) {
+    return res.status(401).json({ error: '로그인이 필요합니다' })
   }
 
   const results = await Promise.allSettled(

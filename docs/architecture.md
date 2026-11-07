@@ -29,11 +29,11 @@ api/                     Vercel Serverless Functions (파일 경로 = URL 경로
   attachments/
     [id].ts               로그인한 사용자에게만 첨부파일을 스트리밍하는 프록시
   stocks/
-    index.ts              네이버 시세 폴링 API를 서버에서 대신 호출해 정리된 형태로 반환 (인증 불필요)
+    index.ts              네이버 시세 폴링 API를 서버에서 대신 호출해 정리된 형태로 반환 (로그인 필요)
   translate/
-    index.ts              MyMemory 번역 API 프록시 (인증 불필요, 키/가입 불필요)
+    index.ts              MyMemory 번역 API 프록시 (키/가입 불필요, 로그인은 필요)
   news/
-    index.ts              스포츠 RSS 피드 3개를 서버에서 가져와 파싱·병합·정렬해 반환 (인증 불필요)
+    index.ts              스포츠 RSS 피드 3개를 서버에서 가져와 파싱·병합·정렬해 반환 (로그인 필요)
 
 src/
   pages/                  Home, Login, Signup, BoardList, PostDetail, PostEditor, NotFound,
@@ -101,7 +101,9 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 
 ## 지도 / 시세 / 번역 / 스포츠 뉴스 (독립 유틸리티 페이지)
 
-게시판과 무관하게 로그인 없이 누구나 쓸 수 있는 4개 메뉴. 전부 DB를 쓰지 않고, 외부 서비스를 그대로 노출하지 않기 위해 "서버(Vercel 함수)가 외부 API를 대신 호출해서 정리된 형태로 내려준다"는 동일한 패턴을 씁니다 (지도만 예외 — 아래 참고).
+게시판과 별개의 4개 메뉴. 전부 DB를 쓰지 않고, 외부 서비스를 그대로 노출하지 않기 위해 "서버(Vercel 함수)가 외부 API를 대신 호출해서 정리된 형태로 내려준다"는 동일한 패턴을 씁니다 (지도만 예외 — 아래 참고).
+
+게시판과 동일하게 **로그인해야 접근 가능** — 프론트는 `/map`, `/stock`, `/translate`, `/news`를 `ProtectedRoute`로 감싸고, `api/stocks`, `api/translate`, `api/news`도 각각 `requireAuth`로 401을 반환해 서버 쪽에서 최종 방어함 (지도는 별도 백엔드 호출이 없어 프론트 라우트 가드만 적용).
 
 ### 지도 (`/map`, `MapPage.tsx`)
 - 카카오맵 JavaScript SDK를 클라이언트에서 동적으로 `<script>` 삽입해 로드 (`VITE_KAKAO_MAP_KEY` 필요, 빌드 타임에 번들에 박힘)
