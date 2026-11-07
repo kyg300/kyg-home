@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
@@ -53,9 +53,6 @@ export default function Login() {
           {submitting ? '로그인 중...' : '로그인'}
         </button>
       </form>
-      <p>
-        계정이 없으신가요? <Link to="/signup">회원가입</Link>
-      </p>
     </section>
   )
 }

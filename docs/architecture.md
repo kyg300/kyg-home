@@ -20,7 +20,7 @@ api/                     Vercel Serverless Functions (파일 경로 = URL 경로
     db.ts                Neon sql 클라이언트
     attachments.ts       첨부파일 허용 타입/용량/개수 상수 + 검증 함수
   auth/
-    signup.ts login.ts logout.ts me.ts
+    login.ts logout.ts me.ts
   posts/
     index.ts             GET(목록)/POST(작성)
     [id].ts               GET(상세)/PUT(수정)/DELETE(삭제)
@@ -36,7 +36,7 @@ api/                     Vercel Serverless Functions (파일 경로 = URL 경로
     index.ts              스포츠 RSS 피드 3개를 서버에서 가져와 파싱·병합·정렬해 반환 (로그인 필요)
 
 src/
-  pages/                  Home, Login, Signup, BoardList, PostDetail, PostEditor, NotFound,
+  pages/                  Home, Login, BoardList, PostDetail, PostEditor, NotFound,
                           MapPage(/map), StockPage(/stock), TranslatePage(/translate), NewsPage(/news)
   components/             Navbar, ProtectedRoute
   context/AuthContext.tsx 로그인 상태 전역 관리
@@ -69,7 +69,7 @@ attachments (id, post_id → posts, filename, url, content_type, size, created_a
 
 ## 인증 흐름
 
-1. `POST /api/auth/signup` 또는 `/login` → 비밀번호 검증 후 JWT 발급 → `Set-Cookie: kyg_home_token=...`(HttpOnly, SameSite=Lax)
+1. `POST /api/auth/login` → 비밀번호 검증 후 JWT 발급 → `Set-Cookie: kyg_home_token=...`(HttpOnly, SameSite=Lax). 회원가입 기능은 없음 — 계정은 DB에 직접 추가해야 함
 2. 이후 모든 요청은 브라우저가 쿠키를 자동으로 실어 보냄 (`fetch`에는 `credentials: 'include'` 필요, `src/lib/api.ts`에 이미 적용됨)
 3. API 핸들러는 `requireAuth(req)`로 쿠키의 JWT를 검증하고 `{ userId, username }`을 얻음
 4. `GET /api/posts`, `GET /api/posts/:id`도 `requireAuth` 필수 — **비로그인 상태에서는 게시글을 아예 읽을 수 없음**

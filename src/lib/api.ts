@@ -76,11 +76,6 @@ export interface Stock {
 }
 
 export const api = {
-  signup: (email: string, username: string, password: string) =>
-    request<{ user: User }>('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify({ email, username, password }),
-    }),
   login: (email: string, password: string) =>
     request<{ user: User }>('/auth/login', {
       method: 'POST',

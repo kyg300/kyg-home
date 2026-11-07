@@ -6,7 +6,6 @@ register('./ts-extension-loader.mjs', import.meta.url)
 const PORT = process.env.API_DEV_PORT ?? 3001
 
 const routes = [
-  { method: null, pattern: /^\/api\/auth\/signup$/, params: [], file: '../api/auth/signup.ts' },
   { method: null, pattern: /^\/api\/auth\/login$/, params: [], file: '../api/auth/login.ts' },
   { method: null, pattern: /^\/api\/auth\/logout$/, params: [], file: '../api/auth/logout.ts' },
   { method: null, pattern: /^\/api\/auth\/me$/, params: [], file: '../api/auth/me.ts' },

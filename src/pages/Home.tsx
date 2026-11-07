@@ -61,15 +61,10 @@ export default function Home() {
               <span className="quicklink-icon">📋</span>
               <span className="quicklink-label">게시판</span>
             </Link>
-            {user ? (
+            {user && (
               <Link to="/board/new" className="quicklink">
                 <span className="quicklink-icon">✏️</span>
                 <span className="quicklink-label">글쓰기</span>
-              </Link>
-            ) : (
-              <Link to="/signup" className="quicklink">
-                <span className="quicklink-icon">👤</span>
-                <span className="quicklink-label">회원가입</span>
               </Link>
             )}
             {!user && (

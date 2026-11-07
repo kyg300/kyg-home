@@ -9,7 +9,6 @@ import NewsPage from './pages/NewsPage'
 import NotFound from './pages/NotFound'
 import PostDetail from './pages/PostDetail'
 import PostEditor from './pages/PostEditor'
-import Signup from './pages/Signup'
 import StockPage from './pages/StockPage'
 import TranslatePage from './pages/TranslatePage'
 
@@ -53,7 +52,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/signup" element={<Signup />} />
           <Route
             path="/board"
             element={
