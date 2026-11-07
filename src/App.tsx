@@ -12,6 +12,7 @@ import PostDetail from './pages/PostDetail'
 import PostEditor from './pages/PostEditor'
 import StockPage from './pages/StockPage'
 import TranslatePage from './pages/TranslatePage'
+import TrendsPage from './pages/TrendsPage'
 
 function App() {
   return (
@@ -50,6 +51,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <NewsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trends"
+            element={
+              <ProtectedRoute>
+                <TrendsPage />
               </ProtectedRoute>
             }
           />

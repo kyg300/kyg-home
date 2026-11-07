@@ -122,6 +122,49 @@ a:hover {
   font-size: 0.85rem;
 }
 
+.trend-card {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+}
+
+.trend-rank {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-accent-soft);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.trend-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  min-width: 0;
+}
+
+.trend-keyword-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.trend-keyword {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.trend-traffic {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
 .translate-form {
   margin-top: var(--spacing-3);
   display: flex;

@@ -105,6 +105,15 @@ export interface Weather {
   todayMin: number
 }
 
+export interface TrendItem {
+  rank: number
+  keyword: string
+  traffic: string
+  newsTitle: string
+  newsLink: string
+  newsSource: string
+}
+
 export const api = {
   login: (email: string, password: string) =>
     request<{ user: User }>('/auth/login', {
@@ -133,6 +142,7 @@ export const api = {
       `/translate?${new URLSearchParams({ text, source, target }).toString()}`,
     ),
   getNews: () => request<{ articles: Article[] }>('/news'),
+  getTrends: () => request<{ trends: TrendItem[] }>('/trends'),
   uploadAttachment: async (file: File): Promise<NewAttachment> => {
     const blob = await upload(file.name, file, {
       access: 'private',

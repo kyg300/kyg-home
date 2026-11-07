@@ -19,7 +19,7 @@ api/                     Vercel Serverless Functions (파일 경로 = URL 경로
     auth.ts              JWT 발급/검증, 쿠키 생성, requireAuth()
     db.ts                Neon sql 클라이언트
     attachments.ts       첨부파일 허용 타입/용량/개수 상수 + 검증 함수
-    rss.ts                RSS 2.0 파싱 공용 함수 (fetchFeed/parseFeed) — news에서 사용
+    rss.ts                RSS/XML 태그 파싱 공용 함수 (fetchFeed/parseFeed/extractTag/decodeEntities) — news, trends에서 사용
   auth/
     login.ts logout.ts me.ts
   posts/
@@ -37,11 +37,13 @@ api/                     Vercel Serverless Functions (파일 경로 = URL 경로
     index.ts              스포츠 RSS 피드 3개를 서버에서 가져와 파싱·병합·정렬해 반환 (로그인 필요)
   weather/
     index.ts              Open-Meteo API로 서울 날씨(현재/오늘 최고·최저)를 가져와 반환 (로그인 필요, 홈 화면 위젯용)
+  trends/
+    index.ts              구글 트렌드 대한민국 실시간 검색어 RSS를 가져와 순위·관련 뉴스로 정리해 반환 (로그인 필요)
 
 src/
   pages/                  Home, Login, BoardList, PostDetail, PostEditor, NotFound,
                           MapPage(/map), StockPage(/stock), TranslatePage(/translate), NewsPage(/news),
-                          FortunePage(/fortune)
+                          TrendsPage(/trends), FortunePage(/fortune)
   components/             Navbar, ProtectedRoute
   context/AuthContext.tsx 로그인 상태 전역 관리
   lib/
@@ -104,11 +106,11 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 - 글 수정 시 기존 첨부파일 목록과 새로 제출된 목록을 비교해서, 빠진 것은 DB row 삭제 + `del()`로 Blob 파일도 삭제
 - 글 삭제 시에도 연결된 첨부파일의 Blob 파일을 먼저 지운 뒤 게시글을 삭제 (DB row는 `on delete cascade`로 자동 정리되지만 Blob 파일은 별도 API 호출로 지워야 함)
 
-## 지도 / 시세 / 번역 / 스포츠 뉴스 / 운세 (독립 유틸리티 페이지)
+## 지도 / 시세 / 번역 / 스포츠 뉴스 / 급상승검색어 / 운세 (독립 유틸리티 페이지)
 
-게시판과 별개의 5개 메뉴. 전부 DB를 쓰지 않고, 외부 서비스를 그대로 노출하지 않기 위해 "서버(Vercel 함수)가 외부 API를 대신 호출해서 정리된 형태로 내려준다"는 동일한 패턴을 씁니다 (지도·운세는 예외 — 아래 참고).
+게시판과 별개의 6개 메뉴. 전부 DB를 쓰지 않고, 외부 서비스를 그대로 노출하지 않기 위해 "서버(Vercel 함수)가 외부 API를 대신 호출해서 정리된 형태로 내려준다"는 동일한 패턴을 씁니다 (지도·운세는 예외 — 아래 참고).
 
-게시판과 동일하게 **로그인해야 접근 가능** — 프론트는 `/map`, `/stock`, `/translate`, `/news`, `/fortune`을 `ProtectedRoute`로 감싸고, `api/stocks`, `api/translate`, `api/news`도 각각 `requireAuth`로 401을 반환해 서버 쪽에서 최종 방어함 (지도·운세는 백엔드 호출 자체가 없어 프론트 라우트 가드만 적용).
+게시판과 동일하게 **로그인해야 접근 가능** — 프론트는 `/map`, `/stock`, `/translate`, `/news`, `/trends`, `/fortune`을 `ProtectedRoute`로 감싸고, `api/stocks`, `api/translate`, `api/news`, `api/trends`도 각각 `requireAuth`로 401을 반환해 서버 쪽에서 최종 방어함 (지도·운세는 백엔드 호출 자체가 없어 프론트 라우트 가드만 적용).
 
 ### 지도 (`/map`, `MapPage.tsx`)
 - 카카오맵 JavaScript SDK를 클라이언트에서 동적으로 `<script>` 삽입해 로드 (`VITE_KAKAO_MAP_KEY` 필요, 빌드 타임에 번들에 박힘)
@@ -135,6 +137,11 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 - 한 피드가 실패해도 전체가 죽지 않도록 `Promise.allSettled`로 가져오고, 성공한 피드만 합쳐서 `pubDate` 기준 최신순 정렬 후 상위 30개만 반환
 - 네이버는 뉴스 RSS를 2022년에 완전히 종료해서 후보에서 제외함 (실제로 예전 RSS 주소가 XML 대신 302 리다이렉트만 반환하는 것을 확인)
 - 프론트는 목록만 보여주고, 각 제목은 `target="_blank" rel="noopener noreferrer"`로 원문을 새 탭에 염
+
+### 급상승 검색어 (`/trends`, `TrendsPage.tsx` + `api/trends/index.ts`)
+- 네이버·다음이 2021년에 "실시간 검색어"를 폐지한 뒤로 대체할 공식 국내 서비스가 없어서, [구글 트렌드의 대한민국 일일 검색 트렌드 RSS](https://trends.google.com/trending/rss?geo=KR)를 대신 사용 (키/가입 불필요)
+- 이 피드는 일반 RSS 2.0이 아니라 `ht:` 네임스페이스로 확장된 구조라 `approx_traffic`(대략적인 검색량), 연관 뉴스 기사(`ht:news_item` 블록, 키워드당 여러 개 중 첫 번째만 사용)가 추가로 들어있음 — `api/_lib/rss.ts`의 `extractTag`를 그대로 재사용해서 커스텀 태그를 뽑아냄
+- 상위 10개 키워드를 순위·검색량·연관 뉴스 제목/링크와 함께 반환
 
 ### 오늘의 운세 (`/fortune`, `FortunePage.tsx` + `src/lib/fortune.ts`)
 - 실제 점성술 데이터나 외부 API가 아니라, **`날짜+띠` 문자열을 시드로 한 결정론적 해시**로 미리 준비된 문구 풀(총운/금전운/애정운/건강운 각 7~10개)에서 하나씩 골라 보여주는 방식 — 같은 날 같은 띠는 몇 번을 새로고침해도 같은 결과, 날짜가 바뀌면 자동으로 바뀜

@@ -23,6 +23,7 @@ export default function Navbar() {
             <Link to="/stock">시세</Link>
             <Link to="/translate">번역</Link>
             <Link to="/news">스포츠</Link>
+            <Link to="/trends">급상승검색어</Link>
             <Link to="/fortune">운세</Link>
             <span className="navbar-user">{user.username}님</span>
             <button className="btn btn-ghost" onClick={handleLogout}>

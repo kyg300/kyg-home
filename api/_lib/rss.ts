@@ -5,17 +5,18 @@ export interface RssArticle {
   source: string
 }
 
-function decodeEntities(text: string): string {
+export function decodeEntities(text: string): string {
   return text
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
     .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
     .replace(/&amp;/g, '&')
 }
 
-function extractTag(block: string, tag: string): string {
+export function extractTag(block: string, tag: string): string {
   const match = block.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`))
   if (!match) return ''
   const raw = match[1].trim()
