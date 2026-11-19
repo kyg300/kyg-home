@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { buildAuthCookie, signToken, verifyPassword } from '../_lib/auth.js'
-import { sql } from '../_lib/db.js'
+import { buildAuthCookie, signToken, verifyPassword } from '../auth.js'
+import { sql } from '../db.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

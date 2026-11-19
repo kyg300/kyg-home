@@ -20,8 +20,12 @@ api/                     Vercel Serverless Functions (파일 경로 = URL 경로
     db.ts                Neon sql 클라이언트
     attachments.ts       첨부파일 허용 타입/용량/개수 상수 + 검증 함수
     rss.ts                RSS/XML 태그 파싱 공용 함수 (fetchFeed/parseFeed/extractTag/decodeEntities) — news, trends에서 사용
+    auth-handlers/
+      login.ts logout.ts me.ts  실제 로그인/로그아웃/내 정보 처리 (api/auth/[action].ts가 호출)
   auth/
-    login.ts logout.ts me.ts
+    [action].ts           /api/auth/login|logout|me를 하나의 함수로 받아 auth-handlers로 넘김
+                          (Vercel Hobby 요금제는 배포당 서버리스 함수 12개 제한 — _lib 안의 파일은 함수로 세지 않음.
+                           새 API를 추가할 땐 함수 개수를 확인하고, 가능하면 기존 함수에 합칠 것. 현재 11개)
   posts/
     index.ts             GET(목록)/POST(작성)
     [id].ts               GET(상세)/PUT(수정)/DELETE(삭제)
