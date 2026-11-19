@@ -20,6 +20,59 @@
   --spacing-4: 24px;
   --spacing-5: 40px;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", Roboto, sans-serif;
+  --shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.08);
+  --air-good: #1c64f2;
+  --air-normal: #047857;
+  --air-bad: #c2710c;
+  --air-very-bad: #d1453b;
+  color-scheme: light;
+}
+
+/* 다크 모드: data-theme이 없으면 OS 설정을 따르고, 있으면 사용자가 고른 값을 따른다 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #121316;
+    --color-surface: #1c1e22;
+    --color-border: #2f3238;
+    --color-text: #e6e7ea;
+    --color-text-muted: #9b9ea7;
+    --color-primary: #0f9f6e;
+    --color-primary-hover: #12b37c;
+    --color-accent: #10b981;
+    --color-accent-soft: #143a2e;
+    --color-danger: #d9534a;
+    --color-danger-hover: #e86a61;
+    --color-rise: #f26b5e;
+    --color-fall: #5b8def;
+    --shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.4);
+    --air-good: #5b8def;
+    --air-normal: #34d399;
+    --air-bad: #f0a54a;
+    --air-very-bad: #f26b5e;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #121316;
+  --color-surface: #1c1e22;
+  --color-border: #2f3238;
+  --color-text: #e6e7ea;
+  --color-text-muted: #9b9ea7;
+  --color-primary: #0f9f6e;
+  --color-primary-hover: #12b37c;
+  --color-accent: #10b981;
+  --color-accent-soft: #143a2e;
+  --color-danger: #d9534a;
+  --color-danger-hover: #e86a61;
+  --color-rise: #f26b5e;
+  --color-fall: #5b8def;
+  --shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.4);
+  --air-good: #5b8def;
+  --air-normal: #34d399;
+  --air-bad: #f0a54a;
+  --air-very-bad: #f26b5e;
+  color-scheme: dark;
 }
 
 * {
@@ -60,7 +113,18 @@ a:hover {
 .navbar-links {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--spacing-2) var(--spacing-3);
+}
+
+.navbar {
   gap: var(--spacing-3);
+}
+
+.theme-toggle {
+  padding: 2px var(--spacing-2);
+  line-height: 1.4;
 }
 
 .navbar-user {
@@ -446,6 +510,13 @@ a:hover {
   border-radius: 999px;
   font-size: 0.95rem;
   color: var(--color-text);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.weather-widget:hover {
+  border-color: var(--color-primary);
+  text-decoration: none;
 }
 
 .weather-icon {
@@ -592,7 +663,7 @@ a:hover {
 }
 
 .post-card:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-hover);
   transform: translateY(-2px);
   text-decoration: none;
 }
@@ -808,4 +879,392 @@ a:hover {
 
 .fortune-list dd {
   margin: 0;
+}
+
+.btn-small {
+  padding: 2px var(--spacing-2);
+  font-size: 0.82rem;
+}
+
+.inline-form {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.inline-form .form-input {
+  flex: 1;
+  min-width: 160px;
+}
+
+.inline-form .dday-date-input {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* Watchlist */
+.watchlist-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-3);
+}
+
+.watchlist-results {
+  list-style: none;
+  margin: 0;
+  padding: var(--spacing-1) 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.watchlist-results > li {
+  padding: var(--spacing-2) var(--spacing-3);
+}
+
+.watchlist-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+}
+
+.watchlist-result + .watchlist-result {
+  border-top: 1px solid var(--color-border);
+}
+
+.stock-remove {
+  margin-left: auto;
+}
+
+/* Notes (할 일 / D-day / 메모) */
+.notes-section {
+  margin-top: var(--spacing-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.notes-section .section-header {
+  margin-bottom: 0;
+}
+
+.notes-section > p {
+  margin: 0;
+}
+
+.todo-list,
+.dday-list,
+.memo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.todo-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  cursor: pointer;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.todo-label input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--color-primary);
+}
+
+.todo-done .todo-label span {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.dday-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.dday-past {
+  opacity: 0.65;
+}
+
+.dday-badge {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.dday-badge-lg {
+  min-width: 72px;
+  font-size: 1.15rem;
+}
+
+.dday-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dday-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.dday-date {
+  font-size: 0.82rem;
+}
+
+.memo-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.memo-content {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.memo-edit {
+  width: 100%;
+}
+
+.memo-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.memo-date {
+  font-size: 0.8rem;
+  margin-right: auto;
+}
+
+/* Home "오늘" 패널 */
+.today-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--spacing-3);
+}
+
+.today-list {
+  margin: 0;
+  padding-left: 1.1em;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.today-list li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Weather page */
+.weather-city-select {
+  width: auto;
+}
+
+.weather-page {
+  margin-top: var(--spacing-3);
+  transition: opacity 0.15s ease;
+}
+
+.weather-page.is-loading {
+  opacity: 0.6;
+}
+
+.weather-now {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+}
+
+.weather-now-icon {
+  font-size: 3.6rem;
+  line-height: 1;
+}
+
+.weather-now-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.weather-now-temp {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.weather-now-condition {
+  font-weight: 600;
+}
+
+.weather-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--spacing-2);
+  margin: var(--spacing-2) 0 0;
+}
+
+.weather-stat {
+  margin: 0;
+}
+
+.weather-stat dt {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.weather-stat dd {
+  margin: var(--spacing-1) 0 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.weather-stat small {
+  font-weight: 400;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.air-good {
+  color: var(--air-good);
+}
+
+.air-normal {
+  color: var(--air-normal);
+}
+
+.air-bad {
+  color: var(--air-bad);
+}
+
+.air-very-bad {
+  color: var(--air-very-bad);
+}
+
+.weather-section-title {
+  margin-top: var(--spacing-4);
+  margin-bottom: var(--spacing-2);
+}
+
+.weather-hourly {
+  display: flex;
+  gap: var(--spacing-1);
+  overflow-x: auto;
+  padding: var(--spacing-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.weather-hour {
+  flex: 0 0 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.85rem;
+}
+
+.weather-hour-time,
+.weather-hour-rain {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.weather-hour-icon {
+  font-size: 1.3rem;
+}
+
+.weather-hour-temp {
+  font-weight: 600;
+}
+
+.weather-daily {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--spacing-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.weather-day {
+  display: grid;
+  grid-template-columns: 72px 32px 40px 36px 1fr 36px;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.weather-day + .weather-day {
+  border-top: 1px solid var(--color-border);
+}
+
+.weather-day-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.weather-day-icon {
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.weather-day-rain {
+  color: var(--color-fall);
+  font-size: 0.8rem;
+}
+
+.weather-day-min {
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.weather-day-max {
+  font-weight: 600;
+}
+
+.weather-day-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-border);
+}
+
+.weather-day-bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--color-fall), var(--color-rise));
+}
+
+.weather-source {
+  font-size: 0.78rem;
+  text-align: right;
 }

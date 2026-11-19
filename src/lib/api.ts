@@ -94,15 +94,79 @@ export interface Coin {
   changeRate: string
 }
 
-export interface Weather {
-  location: string
+export interface WatchlistItem {
+  code: string
+  name: string
+}
+
+export interface StockSearchResult {
+  code: string
+  name: string
+  market: string
+}
+
+export interface WeatherHour {
+  time: string
   temperature: number
+  icon: string
+  precipitationProbability: number
+}
+
+export interface WeatherDay {
+  date: string
+  condition: string
+  icon: string
+  max: number
+  min: number
+  precipitationProbability: number
+}
+
+export type AirGrade = '좋음' | '보통' | '나쁨' | '매우나쁨'
+
+export interface Weather {
+  city: string
+  location: string
+  cities: { key: string; name: string }[]
+  temperature: number
+  feelsLike: number
+  humidity: number
   windspeed: number
   isDay: boolean
   condition: string
   icon: string
   todayMax: number
   todayMin: number
+  sunrise: string
+  sunset: string
+  air: {
+    pm10: number | null
+    pm25: number | null
+    pm10Grade: AirGrade | null
+    pm25Grade: AirGrade | null
+  }
+  hourly: WeatherHour[]
+  daily: WeatherDay[]
+}
+
+export interface Todo {
+  id: string
+  text: string
+  done: boolean
+  created_at: string
+}
+
+export interface Memo {
+  id: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Dday {
+  id: string
+  title: string
+  target_date: string
+  created_at: string
 }
 
 export interface TrendItem {
@@ -135,8 +199,44 @@ export const api = {
       body: JSON.stringify({ title, content, attachments }),
     }),
   deletePost: (id: string) => request<{ ok: true }>(`/posts/${id}`, { method: 'DELETE' }),
-  getStocks: () => request<{ stocks: Stock[]; exchanges: Exchange[]; coins: Coin[] }>('/stocks'),
-  getWeather: () => request<Weather>('/weather'),
+  getStocks: () =>
+    request<{ stocks: Stock[]; exchanges: Exchange[]; coins: Coin[]; watchlist: WatchlistItem[] }>('/stocks'),
+  searchStocks: (q: string) =>
+    request<{ results: StockSearchResult[] }>(`/stocks?${new URLSearchParams({ q }).toString()}`),
+  addWatchlist: (code: string, name: string) =>
+    request<{ ok: true }>('/stocks', { method: 'POST', body: JSON.stringify({ code, name }) }),
+  removeWatchlist: (code: string) =>
+    request<{ ok: true }>(`/stocks?${new URLSearchParams({ code }).toString()}`, { method: 'DELETE' }),
+  getWeather: (city?: string) =>
+    request<Weather>(city ? `/weather?${new URLSearchParams({ city }).toString()}` : '/weather'),
+  listTodos: () => request<{ items: Todo[] }>('/personal?kind=todos'),
+  createTodo: (text: string) =>
+    request<{ item: Todo }>('/personal?kind=todos', { method: 'POST', body: JSON.stringify({ text }) }),
+  updateTodo: (id: string, changes: { text?: string; done?: boolean }) =>
+    request<{ item: Todo }>(`/personal?kind=todos&id=${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(changes),
+    }),
+  deleteTodo: (id: string) =>
+    request<{ ok: true }>(`/personal?kind=todos&id=${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  listMemos: () => request<{ items: Memo[] }>('/personal?kind=memos'),
+  createMemo: (content: string) =>
+    request<{ item: Memo }>('/personal?kind=memos', { method: 'POST', body: JSON.stringify({ content }) }),
+  updateMemo: (id: string, content: string) =>
+    request<{ item: Memo }>(`/personal?kind=memos&id=${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    }),
+  deleteMemo: (id: string) =>
+    request<{ ok: true }>(`/personal?kind=memos&id=${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  listDdays: () => request<{ items: Dday[] }>('/personal?kind=ddays'),
+  createDday: (title: string, targetDate: string) =>
+    request<{ item: Dday }>('/personal?kind=ddays', {
+      method: 'POST',
+      body: JSON.stringify({ title, targetDate }),
+    }),
+  deleteDday: (id: string) =>
+    request<{ ok: true }>(`/personal?kind=ddays&id=${encodeURIComponent(id)}`, { method: 'DELETE' }),
   translate: (text: string, source: string, target: string) =>
     request<{ translatedText: string }>(
       `/translate?${new URLSearchParams({ text, source, target }).toString()}`,

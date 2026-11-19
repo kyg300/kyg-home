@@ -30,3 +30,41 @@ create table if not exists attachments (
 );
 
 create index if not exists attachments_post_id_idx on attachments (post_id);
+
+create table if not exists watchlist (
+  user_id uuid not null references users(id) on delete cascade,
+  code text not null,
+  name text not null,
+  created_at timestamptz not null default now(),
+  primary key (user_id, code)
+);
+
+create table if not exists todos (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  text text not null,
+  done boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists todos_user_id_idx on todos (user_id, created_at);
+
+create table if not exists memos (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  content text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists memos_user_id_idx on memos (user_id, updated_at desc);
+
+create table if not exists ddays (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  title text not null,
+  target_date date not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists ddays_user_id_idx on ddays (user_id, target_date);

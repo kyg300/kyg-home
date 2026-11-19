@@ -30,26 +30,31 @@ api/                     Vercel Serverless Functions (파일 경로 = URL 경로
   attachments/
     [id].ts               로그인한 사용자에게만 첨부파일을 스트리밍하는 프록시
   stocks/
-    index.ts              네이버 시세 폴링 API(주식)+네이버페이 증권 환율 API+업비트 코인 API를 병렬 호출해 반환 (로그인 필요)
+    index.ts              관심종목 시세(네이버 폴링 API)+환율+코인 반환, ?q= 종목 검색, POST/DELETE로 관심종목 추가·삭제 (로그인 필요)
+  personal/
+    index.ts              할 일/메모/D-day CRUD (?kind=todos|memos|ddays, 본인 데이터만, 로그인 필요)
   translate/
     index.ts              MyMemory 번역 API 프록시 (키/가입 불필요, 로그인은 필요)
   news/
     index.ts              스포츠 RSS 피드 3개를 서버에서 가져와 파싱·병합·정렬해 반환 (로그인 필요)
   weather/
-    index.ts              Open-Meteo API로 서울 날씨(현재/오늘 최고·최저)를 가져와 반환 (로그인 필요, 홈 화면 위젯용)
+    index.ts              Open-Meteo 예보+대기질 API로 도시별(?city=) 현재/시간별/주간 날씨와 미세먼지 반환 (로그인 필요, 날씨 페이지·홈 위젯 공용)
   trends/
     index.ts              구글 트렌드 대한민국 실시간 검색어 RSS를 가져와 순위·관련 뉴스로 정리해 반환 (로그인 필요)
 
 src/
   pages/                  Home, Login, BoardList, PostDetail, PostEditor, NotFound,
                           MapPage(/map), StockPage(/stock), TranslatePage(/translate), NewsPage(/news),
-                          TrendsPage(/trends), FortunePage(/fortune)
-  components/             Navbar, ProtectedRoute
+                          TrendsPage(/trends), FortunePage(/fortune), NotesPage(/notes), WeatherPage(/weather)
+  components/             Navbar, ProtectedRoute, ThemeToggle
   context/AuthContext.tsx 로그인 상태 전역 관리
   lib/
     api.ts                백엔드 API 호출 래퍼 + 첨부파일 업로드
     attachments.ts        첨부파일 허용 타입/용량/개수 상수 (프론트 쪽, api/_lib와 별도 사본)
     fortune.ts            띠별 오늘의 운세 생성 로직 (날짜+띠 시드 해시, 외부 API 없음)
+    dday.ts               D-day 계산 (D-n / D-Day / D+n)
+    theme.ts              다크 모드 설정 읽기/적용 (html의 data-theme 속성)
+    storage.ts            localStorage 안전 래퍼 + 키 상수 (날씨 도시, 테마)
   styles/index.css        전역 스타일 (디자인 토큰은 :root 변수)
   vite-env.d.ts           `import.meta.env`에 커스텀 환경변수(`VITE_KAKAO_MAP_KEY`) 타입 추가
 
@@ -69,6 +74,10 @@ vercel.json               SPA 라우팅용 rewrite 설정
 users (id, email, username, password_hash, created_at)
 posts (id, user_id → users, title, content, created_at, updated_at)
 attachments (id, post_id → posts, filename, url, content_type, size, created_at)
+watchlist (user_id → users, code, name, created_at)   -- PK (user_id, code)
+todos (id, user_id → users, text, done, created_at)
+memos (id, user_id → users, content, created_at, updated_at)
+ddays (id, user_id → users, title, target_date date, created_at)
 ```
 
 - `posts.user_id`, `attachments.post_id` 모두 `on delete cascade` — 사용자/게시글 삭제 시 하위 데이터 자동 정리 (단, Blob 파일 자체는 별도로 지워야 함, 아래 참고)
@@ -118,7 +127,9 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 - 서버 프록시 없이 브라우저가 카카오 SDK를 직접 호출하는 유일한 페이지 (지도 SDK 특성상 서버 프록시가 의미 없음)
 
 ### 시세 (`/stock`, `StockPage.tsx` + `api/stocks/index.ts`)
-- `api/stocks/index.ts`가 네이버 금융이 내부적으로 쓰는 실시간 시세 JSON(`polling.finance.naver.com`)을 서버에서 호출해 4개 고정 종목(삼성전자 005930, SK하이닉스 000660, 카카오 035720, 두산에너빌리티 034020)만 추려서 반환
+- `api/stocks/index.ts`가 네이버 금융이 내부적으로 쓰는 실시간 시세 JSON(`polling.finance.naver.com`)을 서버에서 호출해 **로그인한 사용자의 관심종목**(`watchlist` 테이블) 시세를 반환. 관심종목이 없으면 주식은 빈 목록
+- 관심종목 추가용 종목 검색은 `GET /api/stocks?q=`로, 네이버 증권 자동완성 API(`ac.stock.naver.com/ac`)를 프록시해 국내 종목 최대 10개 반환. 추가는 `POST /api/stocks {code, name}`(최대 30개), 삭제는 `DELETE /api/stocks?code=`
+- 응답이 사용자마다 달라서 `Cache-Control: private, no-store` (예전엔 고정 종목이라 CDN 캐시를 썼음)
 - `finance.naver.com`의 HTML 페이지 자체는 `robots.txt`가 일반 크롤러를 막고 있어 직접 파싱하지 않음 — `polling.finance.naver.com`은 별도 서브도메인이라 그 제한을 받지 않고, 페이지가 실제로 쓰는 API라 HTML 파싱보다 안정적
 - 비공식/무서화되지 않은 API라 네이버가 구조를 바꾸면 깨질 수 있음
 - 같은 엔드포인트가 **환율**(네이버페이 증권의 `m.stock.naver.com/front-api/marketIndex/prices?category=exchange&reutersCode=FX_USDKRW` 등, 통화당 개별 호출이라 `Promise.all`로 4개 병렬 호출 — USD/EUR/JPY(100엔 기준)/CNY)과 **코인**(업비트 공개 API `api.upbit.com/v1/ticker`, 키 불필요, BTC/ETH/XRP)도 함께 반환 (`{ stocks, exchanges, coins }`)
@@ -149,8 +160,25 @@ Vercel 서버리스 함수는 요청 본문 크기 제한이 있고, 사용 중�
 - 선택한 띠는 `localStorage`에 저장해서 다음 방문 때도 유지 (브라우저 로컬 저장소라 기기별로 따로 기억됨)
 - 운세 점수(50~100)도 같은 해시 방식으로 생성
 
-## 날씨 위젯 (홈 화면, `api/weather/index.ts`)
-- 별도 페이지가 아니라 `Home.tsx`의 hero 영역에 박힌 위젯 — 로그인했을 때만 호출/표시 (다른 유틸리티와 동일하게 `requireAuth`로 서버에서도 401 방어)
-- [Open-Meteo](https://open-meteo.com) 무료 API를 키/가입 없이 호출 (위도·경도 기반이라 서울 좌표를 고정값으로 사용, 다른 도시 지원은 안 함)
-- `current_weather`(현재 기온/풍속/주야 여부/날씨 코드)와 `daily`(오늘 최고/최저기온) 두 블록을 한 번에 요청
+## 날씨 (`/weather`, `WeatherPage.tsx` + 홈 위젯, `api/weather/index.ts`)
+- `WeatherPage`(상세)와 `Home.tsx` hero 영역의 위젯이 같은 API를 씀 — 로그인했을 때만 호출/표시 (`requireAuth`로 서버에서도 401 방어)
+- [Open-Meteo](https://open-meteo.com) 무료 API를 키/가입 없이 호출. 도시는 서버의 `CITIES` 표(16개 도시 좌표)에서 `?city=키`로 고르고, 모르는 키면 서울
+- 예보 API에서 `current`(기온/체감/습도/풍속/날씨 코드), `hourly`(24시간 기온/날씨/강수확률), `daily`(7일 최고·최저/강수확률/일출·일몰)를, 대기질 API(`air-quality-api.open-meteo.com`)에서 PM10/PM2.5를 병렬로 요청. 대기질만 실패하면 미세먼지는 `null`로 내려주고 나머지는 정상 반환
+- 미세먼지 등급은 환경부 기준(PM10 30/80/150, PM2.5 15/35/75 ㎍/㎥)으로 서버에서 계산
+- 고른 도시는 `localStorage`(`kyg_home_weather_city`)에 저장돼서 홈 위젯도 같은 도시를 보여줌
 - WMO 날씨 코드(0, 1, 2, 3, 45...)를 한글 설명 + 이모지로 매핑하는 테이블을 직접 유지 (`WEATHER_CODE_MAP`) — API가 코드만 주고 텍스트를 안 줌
+
+## 기록 (`/notes`, `NotesPage.tsx` + `api/personal/index.ts`)
+- 할 일(`todos`), 메모(`memos`), D-day(`ddays`) 세 가지를 **하나의 서버리스 함수**에서 `?kind=`로 나눠 처리 (함수 개수를 늘리지 않기 위해)
+  - `GET/POST /api/personal?kind=todos`, `PUT/DELETE ...&id=` — 할 일은 `{ text?, done? }`로 수정
+  - 메모는 GET/POST/PUT/DELETE, D-day는 GET/POST/DELETE (D-day 수정은 지우고 다시 추가)
+- 모든 쿼리에 `user_id = 로그인한 유저` 조건이 붙어서 다른 사람 데이터는 읽거나 고칠 수 없음. `id`가 UUID 형식이 아니면 DB까지 가지 않고 404
+- D-day 날짜는 `date` 타입으로 저장하고 응답에서는 `to_char(..., 'YYYY-MM-DD')` 문자열로 내려줌 (시간대 때문에 날짜가 하루 밀리는 문제 방지). D-n 계산은 브라우저 기준 오늘 날짜로 `src/lib/dday.ts`에서 함
+- 홈 화면 "오늘" 패널은 같은 API로 미완료 할 일 수와 앞으로 올 D-day 3개를 보여줌
+
+## 다크 모드 (`src/lib/theme.ts`, `ThemeToggle.tsx`)
+- 색은 전부 `index.css`의 `:root` CSS 변수로 관리하고, 다크 팔레트는 같은 변수를 덮어쓰는 방식
+  - `<html data-theme="dark">` → 다크, `data-theme="light"` → 라이트, 속성 없음 → OS 설정(`prefers-color-scheme`)
+- 상단 메뉴 버튼이 시스템 → 라이트 → 다크 순으로 바꾸고 `localStorage`(`kyg_home_theme`)에 저장
+- `index.html`의 작은 인라인 스크립트가 React보다 먼저 저장값을 적용해서 새로고침할 때 밝은 화면이 잠깐 보이는 문제를 막음
+- 새 스타일을 추가할 때 색을 직접 쓰지 말고 `var(--color-...)` 변수를 써야 다크 모드에서도 맞게 보임

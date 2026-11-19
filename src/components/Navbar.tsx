@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import ThemeToggle from './ThemeToggle'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -20,6 +21,8 @@ export default function Navbar() {
           <>
             <Link to="/board">게시판</Link>
             <Link to="/map">지도</Link>
+            <Link to="/notes">기록</Link>
+            <Link to="/weather">날씨</Link>
             <Link to="/stock">시세</Link>
             <Link to="/translate">번역</Link>
             <Link to="/news">스포츠</Link>
@@ -33,6 +36,7 @@ export default function Navbar() {
         ) : (
           <Link to="/login">로그인</Link>
         )}
+        <ThemeToggle />
       </div>
     </nav>
   )

@@ -5,6 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>kyg-home</title>
+    <script>
+      // 화면이 그려지기 전에 저장된 테마를 적용해서 깜빡임을 막는다 (src/lib/theme.ts와 같은 키)
+      try {
+        var t = localStorage.getItem('kyg_home_theme')
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

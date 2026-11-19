@@ -8,11 +8,13 @@ import Login from './pages/Login'
 import MapPage from './pages/MapPage'
 import NewsPage from './pages/NewsPage'
 import NotFound from './pages/NotFound'
+import NotesPage from './pages/NotesPage'
 import PostDetail from './pages/PostDetail'
 import PostEditor from './pages/PostEditor'
 import StockPage from './pages/StockPage'
 import TranslatePage from './pages/TranslatePage'
 import TrendsPage from './pages/TrendsPage'
+import WeatherPage from './pages/WeatherPage'
 
 function App() {
   return (
@@ -27,6 +29,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <MapPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notes"
+            element={
+              <ProtectedRoute>
+                <NotesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/weather"
+            element={
+              <ProtectedRoute>
+                <WeatherPage />
               </ProtectedRoute>
             }
           />

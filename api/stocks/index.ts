@@ -1,7 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireAuth } from '../_lib/auth.js'
+import { sql } from '../_lib/db.js'
 
-const STOCK_CODES = ['005930', '000660', '035720', '034020']
+const STOCK_CODE_RE = /^[0-9A-Z]{6}$/
+const MAX_WATCHLIST = 30
+const MAX_NAME = 100
 
 const EXCHANGE_CODES = [
   { code: 'FX_USDKRW', name: '미국 USD' },
@@ -47,6 +50,20 @@ interface UpbitTickerDatum {
   change: 'RISE' | 'FALL' | 'EVEN'
 }
 
+interface NaverSearchItem {
+  code: string
+  name: string
+  typeName: string
+  nationCode: string
+  category: string
+}
+
+function queryString(value: unknown): string | null {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value) && typeof value[0] === 'string') return value[0]
+  return null
+}
+
 async function fetchExchange({ code, name }: { code: string; name: string }) {
   const url = `https://m.stock.naver.com/front-api/marketIndex/prices?category=exchange&reutersCode=${code}&page=1&pageSize=10`
   const upstream = await fetch(url, { headers: { Referer: `https://m.stock.naver.com/marketindex/exchange/${code}` } })
@@ -83,37 +100,101 @@ async function fetchCoins() {
   })
 }
 
+async function fetchStocks(codes: string[]) {
+  if (!codes.length) return []
+  const stockUrl = `https://polling.finance.naver.com/api/realtime/domestic/stock/${codes.join(',')}`
+  const upstream = await fetch(stockUrl, { headers: { Referer: 'https://finance.naver.com/' } })
+  if (!upstream.ok) throw new Error('시세를 불러오지 못했습니다')
+  const { datas } = (await upstream.json()) as { datas: NaverStockDatum[] }
+  return datas.map((d) => ({
+    code: d.itemCode,
+    name: d.stockName,
+    price: d.closePrice,
+    change: d.compareToPreviousClosePrice,
+    changeDirection: d.compareToPreviousPrice.text,
+    changeRate: d.fluctuationsRatio,
+    open: d.openPrice,
+    high: d.highPrice,
+    low: d.lowPrice,
+    volume: d.accumulatedTradingVolume,
+    marketStatus: d.marketStatus,
+    tradedAt: d.localTradedAt,
+  }))
+}
+
+async function searchStocks(q: string) {
+  const url = `https://ac.stock.naver.com/ac?${new URLSearchParams({ q, target: 'stock' }).toString()}`
+  const upstream = await fetch(url, { headers: { Referer: 'https://m.stock.naver.com/' } })
+  if (!upstream.ok) throw new Error('종목 검색 실패')
+  const { items } = (await upstream.json()) as { items?: NaverSearchItem[] }
+  return (items ?? [])
+    .filter((i) => i.nationCode === 'KOR' && i.category === 'stock' && STOCK_CODE_RE.test(i.code))
+    .slice(0, 10)
+    .map((i) => ({ code: i.code, name: i.name, market: i.typeName }))
+}
+
+async function addToWatchlist(req: VercelRequest, res: VercelResponse, userId: string) {
+  const { code, name } = req.body ?? {}
+  if (typeof code !== 'string' || !STOCK_CODE_RE.test(code)) {
+    return res.status(400).json({ error: '종목 코드가 올바르지 않습니다' })
+  }
+  if (typeof name !== 'string' || !name.trim() || name.length > MAX_NAME) {
+    return res.status(400).json({ error: '종목 이름이 올바르지 않습니다' })
+  }
+  const [{ count }] = await sql`select count(*)::int as count from watchlist where user_id = ${userId}`
+  if (count >= MAX_WATCHLIST) {
+    return res.status(400).json({ error: `관심종목은 최대 ${MAX_WATCHLIST}개까지 추가할 수 있습니다` })
+  }
+  await sql`
+    insert into watchlist (user_id, code, name) values (${userId}, ${code}, ${name.trim()})
+    on conflict (user_id, code) do nothing
+  `
+  return res.status(201).json({ ok: true })
+}
+
+async function removeFromWatchlist(req: VercelRequest, res: VercelResponse, userId: string) {
+  const code = queryString(req.query.code)
+  if (!code || !STOCK_CODE_RE.test(code)) {
+    return res.status(400).json({ error: '종목 코드가 올바르지 않습니다' })
+  }
+  await sql`delete from watchlist where user_id = ${userId} and code = ${code}`
+  return res.status(200).json({ ok: true })
+}
+
+// GET              관심종목 시세 + 환율 + 코인
+// GET ?q=검색어     국내 종목 검색
+// POST {code,name} 관심종목 추가
+// DELETE ?code=    관심종목 삭제
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET')
+  if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'DELETE') {
+    res.setHeader('Allow', 'GET, POST, DELETE')
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  if (!requireAuth(req)) {
+  const payload = requireAuth(req)
+  if (!payload) {
     return res.status(401).json({ error: '로그인이 필요합니다' })
   }
 
-  const stockUrl = `https://polling.finance.naver.com/api/realtime/domestic/stock/${STOCK_CODES.join(',')}`
+  if (req.method === 'POST') return addToWatchlist(req, res, payload.userId)
+  if (req.method === 'DELETE') return removeFromWatchlist(req, res, payload.userId)
+
+  const q = queryString(req.query.q)?.trim()
+  if (q) {
+    try {
+      return res.status(200).json({ results: await searchStocks(q.slice(0, 50)) })
+    } catch {
+      return res.status(502).json({ error: '종목 검색에 실패했습니다' })
+    }
+  }
+
+  const watchRows = await sql`
+    select code, name from watchlist where user_id = ${payload.userId} order by created_at asc
+  `
+  const codes = watchRows.map((r) => r.code as string)
 
   const [stocksResult, exchangesResult, coinsResult] = await Promise.allSettled([
-    fetch(stockUrl, { headers: { Referer: 'https://finance.naver.com/' } }).then(async (r) => {
-      if (!r.ok) throw new Error('시세를 불러오지 못했습니다')
-      const { datas } = (await r.json()) as { datas: NaverStockDatum[] }
-      return datas.map((d) => ({
-        code: d.itemCode,
-        name: d.stockName,
-        price: d.closePrice,
-        change: d.compareToPreviousClosePrice,
-        changeDirection: d.compareToPreviousPrice.text,
-        changeRate: d.fluctuationsRatio,
-        open: d.openPrice,
-        high: d.highPrice,
-        low: d.lowPrice,
-        volume: d.accumulatedTradingVolume,
-        marketStatus: d.marketStatus,
-        tradedAt: d.localTradedAt,
-      }))
-    }),
+    fetchStocks(codes),
     Promise.all(EXCHANGE_CODES.map(fetchExchange)),
     fetchCoins(),
   ])
@@ -126,6 +207,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(502).json({ error: '시세를 불러오지 못했습니다' })
   }
 
-  res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=15')
-  return res.status(200).json({ stocks, exchanges, coins })
+  // 관심종목은 사용자마다 다르므로 CDN 공유 캐시를 쓰지 않는다
+  res.setHeader('Cache-Control', 'private, no-store')
+  return res.status(200).json({ stocks, exchanges, coins, watchlist: watchRows })
 }

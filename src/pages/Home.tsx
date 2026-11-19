@@ -1,7 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { api, type Post, type Weather } from '../lib/api'
+import { api, type Dday, type Post, type Todo, type Weather } from '../lib/api'
+import { daysUntil, ddayLabel } from '../lib/dday'
+import { readStorage, WEATHER_CITY_KEY } from '../lib/storage'
 
 function snippet(content: string, length = 70) {
   const trimmed = content.trim()
@@ -15,6 +17,8 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [weather, setWeather] = useState<Weather | null>(null)
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [ddays, setDdays] = useState<Dday[]>([])
 
   useEffect(() => {
     if (!user) {
@@ -36,9 +40,25 @@ export default function Home() {
       return
     }
     api
-      .getWeather()
+      .getWeather(readStorage(WEATHER_CITY_KEY) ?? undefined)
       .then(setWeather)
       .catch(() => setWeather(null))
+  }, [user])
+
+  useEffect(() => {
+    if (!user) {
+      setTodos([])
+      setDdays([])
+      return
+    }
+    api
+      .listTodos()
+      .then(({ items }) => setTodos(items.filter((t) => !t.done)))
+      .catch(() => setTodos([]))
+    api
+      .listDdays()
+      .then(({ items }) => setDdays(items.filter((d) => daysUntil(d.target_date) >= 0).slice(0, 3)))
+      .catch(() => setDdays([]))
   }, [user])
 
   function handleSearch(e: FormEvent) {
@@ -56,7 +76,7 @@ export default function Home() {
           </h1>
           <p className="hero-tagline">기록하고, 나누고, 다시 찾아보는 공간</p>
           {weather && (
-            <div className="weather-widget">
+            <Link to="/weather" className="weather-widget" title="날씨 자세히 보기">
               <span className="weather-icon">{weather.icon}</span>
               <span className="weather-temp">{Math.round(weather.temperature)}°C</span>
               <span className="weather-condition">{weather.condition}</span>
@@ -64,7 +84,7 @@ export default function Home() {
                 최고 {Math.round(weather.todayMax)}° / 최저 {Math.round(weather.todayMin)}°
               </span>
               <span className="weather-location">{weather.location}</span>
-            </div>
+            </Link>
           )}
           <form className="search-bar" onSubmit={handleSearch}>
             <input
@@ -98,6 +118,45 @@ export default function Home() {
             )}
           </nav>
         </section>
+
+        {user && (
+          <section className="home-section">
+            <div className="section-header">
+              <h2 className="section-title">오늘</h2>
+              <Link to="/notes" className="section-link">
+                기록 열기 →
+              </Link>
+            </div>
+            <div className="today-grid">
+              <Link to="/notes" className="post-card today-card">
+                <span className="post-card-title">할 일 {todos.length}개 남음</span>
+                {todos.length === 0 ? (
+                  <p className="post-card-snippet">남은 할 일이 없어요.</p>
+                ) : (
+                  <ul className="today-list">
+                    {todos.slice(0, 3).map((t) => (
+                      <li key={t.id}>{t.text}</li>
+                    ))}
+                  </ul>
+                )}
+              </Link>
+              <Link to="/notes" className="post-card today-card">
+                <span className="post-card-title">다가오는 D-day</span>
+                {ddays.length === 0 ? (
+                  <p className="post-card-snippet">등록된 D-day가 없어요.</p>
+                ) : (
+                  <ul className="today-list">
+                    {ddays.map((d) => (
+                      <li key={d.id}>
+                        <strong className="dday-badge">{ddayLabel(d.target_date)}</strong> {d.title}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Link>
+            </div>
+          </section>
+        )}
 
         <section className="home-section">
           <div className="section-header">
